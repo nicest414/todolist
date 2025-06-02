@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         // タイトルに未/済を表示
-        title: Text('todo(単発)　未:$notDoneCount / 済:$doneCount'),
+        title: Text('todo(単発)'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -92,6 +92,49 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             const SizedBox(height: 16),
+            // ここから追加
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '未',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () {
+                    // 済タスクだけを抽出してページ遷移
+                    final doneTodos = _todos.where((todo) => todo['isDone'] == true).toList();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DoneTodoPage(doneTodos: doneTodos),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '済',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // ここまで追加
             Expanded(
               child: ListView.builder(
                 itemCount: _todos.length,
@@ -99,15 +142,36 @@ class _MyHomePageState extends State<MyHomePage> {
                   return ListTile(
                     leading: Checkbox(
                       value: _todos[index]['isDone'],
-                      onChanged: (_) => _toggleDone(index),
+                      onChanged: (bool? value) {
+                        _toggleDone(index);
+                      },
                     ),
-                    title: Text(
-                      _todos[index]['title'],
-                      style: TextStyle(
-                        decoration: _todos[index]['isDone']
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _todos[index]['isDone'] ? Colors.green : Colors.grey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _todos[index]['isDone'] ? '済' : '未',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _todos[index]['title'],
+                            style: TextStyle(
+                              decoration: _todos[index]['isDone']
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete),
@@ -165,6 +229,32 @@ class _AddTodoPageState extends State<AddTodoPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// 済タスク一覧ページ
+class DoneTodoPage extends StatelessWidget {
+  final List<Map<String, dynamic>> doneTodos;
+  const DoneTodoPage({super.key, required this.doneTodos});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('済タスク一覧')),
+      body: ListView.builder(
+        itemCount: doneTodos.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(
+              doneTodos[index]['title'],
+              style: const TextStyle(
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
