@@ -10,6 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
       title: 'TODOリスト',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -30,6 +31,7 @@ enum TodoView { undone, done }
 
 class TodoListPage extends StatefulWidget {
   const TodoListPage({super.key});
+
 
   @override
   State<TodoListPage> createState() => _TodoListPageState();
