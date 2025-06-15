@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class TodoChecklistItem {
   String title;
@@ -11,13 +12,16 @@ class TodoItem {
   String memo;
   DateTime? doneAt;
   bool isPinned;
-  List<TodoChecklistItem> checklist; // ←追加
+  List<TodoChecklistItem> checklist;
+  DateTime? notificationTime; // ←追加
+
   TodoItem(
     this.title, {
     this.memo = '',
     this.doneAt,
     this.isPinned = false,
     List<TodoChecklistItem>? checklist,
+    this.notificationTime, // ←追加
   }) : checklist = checklist ?? [];
 }
 
@@ -255,6 +259,7 @@ class _TodoListPageState extends State<TodoListPage> {
                     List<TodoChecklistItem> tempChecklist = [];
                     List<TextEditingController> checklistControllers = [];
                     final checklistScrollController = ScrollController();
+                    DateTime? notificationTime; // ←追加
 
                     final text = await showDialog<String>(
                       context: context,
@@ -364,6 +369,70 @@ class _TodoListPageState extends State<TodoListPage> {
                                         ),
                                       ],
                                     ),
+                                    // ↓ここに通知機能UIを追加
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.notifications, color: Colors.deepPurple),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            notificationTime == null
+                                                ? '通知時刻を設定しない'
+                                                : '通知: ${notificationTime!.hour.toString().padLeft(2, '0')}:${notificationTime!.minute.toString().padLeft(2, '0')}',
+                                            style: const TextStyle(fontSize: 15),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            final now = DateTime.now();
+                                            DateTime tempTime = notificationTime ?? DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+                                            await showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                                  content: SizedBox(
+                                                    height: 200,
+                                                    width: 300,
+                                                    child: CupertinoDatePicker(
+                                                      mode: CupertinoDatePickerMode.time,
+                                                      initialDateTime: tempTime,
+                                                      use24hFormat: true,
+                                                      onDateTimeChanged: (DateTime newTime) {
+                                                        tempTime = newTime;
+                                                      },
+                                                    ),
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(context).pop(),
+                                                      child: const Text('キャンセル'),
+                                                    ),
+                                                    ElevatedButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          notificationTime = tempTime;
+                                                        });
+                                                        Navigator.of(context).pop();
+                                                      },
+                                                      child: const Text('決定'),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                          child: const Text('時刻を設定'),
+                                        ),
+                                        if (notificationTime != null)
+                                          IconButton(
+                                            icon: const Icon(Icons.close, size: 18),
+                                            onPressed: () => setState(() => notificationTime = null),
+                                          ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
@@ -393,9 +462,18 @@ class _TodoListPageState extends State<TodoListPage> {
                         final memo = memoController.text.trim();
                         final checklist = tempChecklist.where((c) => c.title.trim().isNotEmpty).toList();
                         if (tab == 0) {
-                          _todosContinue.add(TodoItem(title, memo: memo, checklist: checklist));
+                          _todosContinue.add(TodoItem(
+                            title,
+                            memo: memo,
+                            checklist: checklist,
+                            notificationTime: notificationTime, // ←追加
+                          ));
                         } else {
-                          _todosSingle.add(TodoItem(title, memo: memo, checklist: checklist));
+                          _todosSingle.add(TodoItem(
+                            title,
+                            memo: memo,
+                            checklist: checklist,
+                          ));
                         }
                       });
                     }
@@ -722,6 +800,70 @@ class _TodoListPageState extends State<TodoListPage> {
                                                 ],
                                               );
                                             }),
+                                            // ↓ここに通知機能UIを追加
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.notifications, color: Colors.deepPurple),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    item.notificationTime == null
+                                                        ? '通知時刻を設定しない'
+                                                        : '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
+                                                    style: const TextStyle(fontSize: 15),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    final now = DateTime.now();
+                                                    DateTime tempTime = item.notificationTime ?? DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+                                                    await showDialog(
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return AlertDialog(
+                                                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                                          content: SizedBox(
+                                                            height: 200,
+                                                            width: 300,
+                                                            child: CupertinoDatePicker(
+                                                              mode: CupertinoDatePickerMode.time,
+                                                              initialDateTime: tempTime,
+                                                              use24hFormat: true,
+                                                              onDateTimeChanged: (DateTime newTime) {
+                                                                tempTime = newTime;
+                                                              },
+                                                            ),
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () => Navigator.of(context).pop(),
+                                                              child: const Text('キャンセル'),
+                                                            ),
+                                                            ElevatedButton(
+                                                              onPressed: () {
+                                                                setState(() {
+                                                                  item.notificationTime = tempTime;
+                                                                });
+                                                                Navigator.of(context).pop();
+                                                              },
+                                                              child: const Text('決定'),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  child: const Text('時刻を設定'),
+                                                ),
+                                                if (item.notificationTime != null)
+                                                  IconButton(
+                                                    icon: const Icon(Icons.close, size: 18),
+                                                    onPressed: () => setState(() => item.notificationTime = null),
+                                                  ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -766,6 +908,20 @@ class _TodoListPageState extends State<TodoListPage> {
                               Text(
                                 item.memo,
                                 style: const TextStyle(color: Colors.black54, fontSize: 13),
+                              ),
+                            if (item.notificationTime != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.notifications, size: 16, color: Colors.deepPurple),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
+                                      style: const TextStyle(color: Colors.deepPurple, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
                               ),
                             if (item.checklist.isNotEmpty)
                               Padding(
