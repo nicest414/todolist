@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 
+class TodoChecklistItem {
+  String title;
+  bool isChecked;
+  TodoChecklistItem(this.title, {this.isChecked = false});
+}
+
 class TodoItem {
   String title;
+  String memo;
   DateTime? doneAt;
   bool isPinned;
-  TodoItem(this.title, {this.doneAt, this.isPinned = false});
+  List<TodoChecklistItem> checklist; // ←追加
+  TodoItem(
+    this.title, {
+    this.memo = '',
+    this.doneAt,
+    this.isPinned = false,
+    List<TodoChecklistItem>? checklist,
+  }) : checklist = checklist ?? [];
 }
 
 enum TodoView { undone, done }
@@ -23,6 +37,10 @@ class _TodoListPageState extends State<TodoListPage> {
   TodoView _view = TodoView.undone;
   int _selectedTabIndex = 1; // 2番目(todo継続タブ)を初期選択
   final PageController _pageController = PageController(initialPage: 1);
+
+  String _searchQuery = '';
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   void _addTodo() {
     final text = _controller.text.trim();
@@ -82,10 +100,40 @@ class _TodoListPageState extends State<TodoListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(tabTitles[_selectedTabIndex]),
-        elevation: 0, // AppBarの下線を消す
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'タスクを検索',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              )
+            : Text(tabTitles[_selectedTabIndex]),
+        elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.deepPurple,
+        actions: (_selectedTabIndex == 1 || _selectedTabIndex == 3)
+            ? [
+                IconButton(
+                  icon: const Text('🔍', style: TextStyle(fontSize: 22)),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      }
+                    });
+                  },
+                ),
+              ]
+            : null,
       ),
       body: Column(
         children: [
@@ -202,52 +250,122 @@ class _TodoListPageState extends State<TodoListPage> {
                   ),
                   onPressed: () async {
                     final controller = TextEditingController();
-                    int? selectedTab; // 0: 継続, 1: 単発, null: 未選択
+                    final memoController = TextEditingController();
+                    int? selectedTab;
+                    List<TodoChecklistItem> tempChecklist = [];
+                    List<TextEditingController> checklistControllers = [];
+                    final checklistScrollController = ScrollController();
 
                     final text = await showDialog<String>(
                       context: context,
                       builder: (BuildContext context) {
                         return StatefulBuilder(
                           builder: (context, setState) {
+                            void scrollToEnd() {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                checklistScrollController.animateTo(
+                                  checklistScrollController.position.maxScrollExtent,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              });
+                            }
+
                             return AlertDialog(
                               title: const Text('新しいタスクを追加'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                    controller: controller,
-                                    autofocus: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'タスク内容',
+                              content: SingleChildScrollView(
+                                controller: checklistScrollController,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: controller,
+                                      autofocus: true,
+                                      decoration: const InputDecoration(
+                                        labelText: 'タスク内容',
+                                      ),
                                     ),
-                                    onSubmitted: (value) {
-                                      if (value.trim().isNotEmpty) {
-                                        Navigator.of(context).pop(value);
-                                      }
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: RadioListTile<int>(
-                                          title: const Text('継続'),
-                                          value: 0,
-                                          groupValue: selectedTab,
-                                          onChanged: (val) => setState(() => selectedTab = val),
-                                        ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller: memoController,
+                                      decoration: const InputDecoration(
+                                        labelText: '詳細メモ（任意）',
                                       ),
-                                      Expanded(
-                                        child: RadioListTile<int>(
-                                          title: const Text('単発'),
-                                          value: 1,
-                                          groupValue: selectedTab,
-                                          onChanged: (val) => setState(() => selectedTab = val),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        const Text('チェックリスト', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        const Spacer(),
+                                        IconButton(
+                                          icon: const Icon(Icons.add),
+                                          onPressed: () {
+                                            setState(() {
+                                              tempChecklist.add(TodoChecklistItem(''));
+                                              checklistControllers.add(TextEditingController());
+                                            });
+                                            scrollToEnd();
+                                          },
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    ...List.generate(tempChecklist.length, (i) {
+                                      return Row(
+                                        children: [
+                                          Checkbox(
+                                            value: tempChecklist[i].isChecked,
+                                            onChanged: (checked) {
+                                              setState(() {
+                                                tempChecklist[i].isChecked = checked ?? false;
+                                              });
+                                            },
+                                          ),
+                                          Expanded(
+                                            child: TextField(
+                                              controller: checklistControllers[i],
+                                              decoration: const InputDecoration(
+                                                hintText: 'チェックリスト項目',
+                                              ),
+                                              onChanged: (val) {
+                                                tempChecklist[i].title = val;
+                                              },
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete),
+                                            onPressed: () {
+                                              setState(() {
+                                                tempChecklist.removeAt(i);
+                                                checklistControllers.removeAt(i);
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    }),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: RadioListTile<int>(
+                                            title: const Text('継続'),
+                                            value: 0,
+                                            groupValue: selectedTab,
+                                            onChanged: (val) => setState(() => selectedTab = val),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: RadioListTile<int>(
+                                            title: const Text('単発'),
+                                            value: 1,
+                                            groupValue: selectedTab,
+                                            onChanged: (val) => setState(() => selectedTab = val),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                               actions: [
                                 TextButton(
@@ -256,9 +374,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
-                                    final value = controller.text;
-                                    if (value.trim().isNotEmpty) {
-                                      Navigator.of(context).pop(value);
+                                    if (controller.text.trim().isNotEmpty) {
+                                      Navigator.of(context).pop('OK');
                                     }
                                   },
                                   child: const Text('追加'),
@@ -269,15 +386,16 @@ class _TodoListPageState extends State<TodoListPage> {
                         );
                       },
                     );
-                    if (text != null && text.trim().isNotEmpty) {
+                    if (text == 'OK' && controller.text.trim().isNotEmpty) {
                       setState(() {
-                        // 追加先を決定
-                        int tab = selectedTab ??
-                            (_selectedTabIndex == 1 ? 0 : _selectedTabIndex == 3 ? 1 : 0);
+                        int tab = selectedTab ?? (_selectedTabIndex == 1 ? 0 : _selectedTabIndex == 3 ? 1 : 0);
+                        final title = controller.text.trim();
+                        final memo = memoController.text.trim();
+                        final checklist = tempChecklist.where((c) => c.title.trim().isNotEmpty).toList();
                         if (tab == 0) {
-                          _todosContinue.add(TodoItem(text.trim()));
+                          _todosContinue.add(TodoItem(title, memo: memo, checklist: checklist));
                         } else {
-                          _todosSingle.add(TodoItem(text.trim()));
+                          _todosSingle.add(TodoItem(title, memo: memo, checklist: checklist));
                         }
                       });
                     }
@@ -399,7 +517,6 @@ class _TodoListPageState extends State<TodoListPage> {
   }
 
   Widget _buildTodoContinueTab() {
-    // 未/済の状態でリストを作成
     final List<TodoItem> displayList = _view == TodoView.undone
         ? _todosContinue.where((t) => t.doneAt == null).toList()
         : _todosContinue.where((t) => t.doneAt != null).toList()
@@ -410,9 +527,14 @@ class _TodoListPageState extends State<TodoListPage> {
               return a.doneAt!.compareTo(b.doneAt!);
             });
 
+    // 検索クエリがあればフィルタ
+    final filteredList = _searchQuery.isEmpty
+        ? displayList
+        : displayList.where((t) => t.title.contains(_searchQuery)).toList();
+
     // ピン付きタスクを先頭に表示
-    final pinned = displayList.where((t) => t.isPinned).toList();
-    final unpinned = displayList.where((t) => !t.isPinned).toList();
+    final pinned = filteredList.where((t) => t.isPinned).toList();
+    final unpinned = filteredList.where((t) => !t.isPinned).toList();
     final orderedList = [...pinned, ...unpinned];
 
     return Column(
@@ -512,6 +634,304 @@ class _TodoListPageState extends State<TodoListPage> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () async {
                             final controller = TextEditingController(text: item.title);
+                            final memoController = TextEditingController(text: item.memo);
+                            List<TodoChecklistItem> tempChecklist = item.checklist.map((c) => TodoChecklistItem(c.title, isChecked: c.isChecked)).toList();
+                            final checklistControllers = tempChecklist.map((c) => TextEditingController(text: c.title)).toList();
+                            final checklistScrollController = ScrollController(); // 追加
+
+                            await showDialog<void>(
+                              context: context,
+                              builder: (context) {
+                                return StatefulBuilder(
+                                  builder: (context, setState) {
+                                    void scrollToEnd() {
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        checklistScrollController.animateTo(
+                                          checklistScrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 300),
+                                          curve: Curves.easeOut,
+                                        );
+                                      });
+                                    }
+
+                                    return AlertDialog(
+                                      title: const Text('タスクを編集'),
+                                      content: SingleChildScrollView(
+                                        controller: checklistScrollController, // 追加
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            TextField(
+                                              controller: controller,
+                                              autofocus: true,
+                                              decoration: const InputDecoration(labelText: 'タスク内容'),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              controller: memoController,
+                                              decoration: const InputDecoration(labelText: '詳細メモ'),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                const Text('チェックリスト', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                const Spacer(),
+                                                IconButton(
+                                                  icon: const Icon(Icons.add),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      tempChecklist.add(TodoChecklistItem(''));
+                                                      checklistControllers.add(TextEditingController());
+                                                    });
+                                                    scrollToEnd(); // 追加
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            ...List.generate(tempChecklist.length, (i) {
+                                              return Row(
+                                                children: [
+                                                  Checkbox(
+                                                    value: tempChecklist[i].isChecked,
+                                                    onChanged: (checked) {
+                                                      setState(() {
+                                                        tempChecklist[i].isChecked = checked ?? false;
+                                                      });
+                                                    },
+                                                  ),
+                                                  Expanded(
+                                                    child: TextField(
+                                                      controller: checklistControllers[i],
+                                                      decoration: const InputDecoration(
+                                                        hintText: 'チェックリスト項目',
+                                                      ),
+                                                      onChanged: (val) {
+                                                        tempChecklist[i].title = val;
+                                                      },
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        tempChecklist.removeAt(i);
+                                                        checklistControllers.removeAt(i);
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
+                                              );
+                                            }),
+                                          ],
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: const Text('キャンセル'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              item.title = controller.text.trim();
+                                              item.memo = memoController.text.trim();
+                                              item.checklist = tempChecklist.where((c) => c.title.trim().isNotEmpty).toList();
+                                            });
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text('保存'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: Text(
+                            item.title,
+                            style: (_view == TodoView.done)
+                                ? const TextStyle(color: Colors.grey)
+                                : null,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _removeTodo(item),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.memo.isNotEmpty)
+                              Text(
+                                item.memo,
+                                style: const TextStyle(color: Colors.black54, fontSize: 13),
+                              ),
+                            if (item.checklist.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Column(
+                                  children: item.checklist.map((checkItem) {
+                                    return Row(
+                                      children: [
+                                        Checkbox(
+                                          value: checkItem.isChecked,
+                                          onChanged: (checked) {
+                                            setState(() {
+                                              checkItem.isChecked = checked ?? false;
+                                            });
+                                          },
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            checkItem.title,
+                                            style: TextStyle(
+                                              decoration: checkItem.isChecked ? TextDecoration.lineThrough : null,
+                                              color: checkItem.isChecked ? Colors.grey : Colors.black87,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),  // ← Paddingのカッコ
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSugorokuTab() {
+    return Container(); // すごろくタブのウィジェット
+  }
+
+  Widget _buildTodoSingleTab() {
+    final List<TodoItem> displayList = _view == TodoView.undone
+        ? _todosSingle.where((t) => t.doneAt == null).toList()
+        : _todosSingle.where((t) => t.doneAt != null).toList()
+            ..sort((a, b) {
+              if (a.doneAt == null && b.doneAt == null) return 0;
+              if (a.doneAt == null) return 1;
+              if (b.doneAt == null) return -1;
+              return a.doneAt!.compareTo(b.doneAt!);
+            });
+
+    // 検索クエリがあればフィルタ
+    final filteredList = _searchQuery.isEmpty
+        ? displayList
+        : displayList.where((t) => t.title.contains(_searchQuery)).toList();
+
+    // ピン付きタスクを先頭に表示
+    final pinned = filteredList.where((t) => t.isPinned).toList();
+    final unpinned = filteredList.where((t) => !t.isPinned).toList();
+    final orderedList = [...pinned, ...unpinned];
+
+    return Column(
+      children: [
+        Expanded(
+          child: ReorderableListView.builder(
+            itemCount: orderedList.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                final pinnedCount = pinned.length;
+                final isOldPinned = oldIndex < pinnedCount;
+                final isNewPinned = newIndex <= pinnedCount;
+
+                // ピン付き⇔ピンなしの間の移動は禁止（ただし直後はOK）
+                if (isOldPinned != isNewPinned && newIndex != pinnedCount) {
+                  return;
+                }
+
+                final item = orderedList.removeAt(oldIndex);
+                orderedList.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+
+                _todosSingle
+                  ..remove(item)
+                  ..insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+              });
+            },
+            buildDefaultDragHandles: false,
+            itemBuilder: (context, index) {
+              final item = orderedList[index];
+              return Padding(
+                key: ValueKey(item),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                child: ReorderableDelayedDragStartListener(
+                  index: index,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: item.isPinned
+                            ? Colors.amber
+                            : Colors.deepPurple.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.deepPurple.withOpacity(0.06),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Dismissible(
+                      key: ValueKey(item),
+                      background: Container(
+                        color: item.isPinned ? Colors.grey : Colors.amber,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.only(left: 20),
+                        child: Icon(
+                          item.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                          color: Colors.white,
+                        ),
+                      ),
+                      secondaryBackground: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      direction: DismissDirection.horizontal,
+                      confirmDismiss: (direction) async {
+                        if (direction == DismissDirection.startToEnd) {
+                          setState(() {
+                            item.isPinned = !item.isPinned;
+                          });
+                          return false; // Dismissibleを消さない
+                        } else if (direction == DismissDirection.endToStart) {
+                          return true; // Dismissibleを消す
+                        }
+                        return false;
+                      },
+                      onDismissed: (direction) {
+                        if (direction == DismissDirection.endToStart) {
+                          _removeTodo(item);
+                        }
+                      },
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: item.doneAt != null,
+                          onChanged: (checked) {
+                            _toggleTodo(item);
+                          },
+                        ),
+                        title: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () async {
+                            final controller = TextEditingController(text: item.title);
                             final edited = await showDialog<String>(
                               context: context,
                               builder: (context) {
@@ -566,140 +986,12 @@ class _TodoListPageState extends State<TodoListPage> {
                           icon: const Icon(Icons.delete),
                           onPressed: () => _removeTodo(item),
                         ),
-                        subtitle: item.isPinned
-                            ? Row(
-                                children: const [
-                                  Icon(Icons.push_pin, color: Colors.amber, size: 16),
-                                  SizedBox(width: 4),
-                                  Text('固定中', style: TextStyle(color: Colors.amber, fontSize: 12)),
-                                ],
+                        subtitle: item.memo.isNotEmpty
+                            ? Text(
+                                item.memo,
+                                style: const TextStyle(color: Colors.black54, fontSize: 13),
                               )
                             : null,
-                      ),
-                    ),
-                  ),
-                ),  // ← Paddingのカッコ
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSugorokuTab() {
-    return Container(); // すごろくタブのウィジェット
-  }
-
-  Widget _buildTodoSingleTab() {
-    // 未/済の状態でリストを作成
-    final List<TodoItem> displayList = _view == TodoView.undone
-        ? _todosSingle.where((t) => t.doneAt == null).toList()
-        : _todosSingle.where((t) => t.doneAt != null).toList()
-            ..sort((a, b) {
-              if (a.doneAt == null && b.doneAt == null) return 0;
-              if (a.doneAt == null) return 1;
-              if (b.doneAt == null) return -1;
-              return a.doneAt!.compareTo(b.doneAt!);
-            });
-
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: displayList.length,
-            itemBuilder: (context, index) {
-              final item = displayList[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.deepPurple.withOpacity(0.06),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Dismissible(
-                    key: ValueKey(item),
-                    background: Container(
-                      color: Colors.red,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    direction: DismissDirection.endToStart,
-                    confirmDismiss: (direction) async {
-                      return true; // Dismissibleを消す
-                    },
-                    onDismissed: (direction) {
-                      // 右から左：削除
-                      _removeTodo(item);
-                    },
-                    child: ListTile(
-                      leading: Checkbox(
-                        value: item.doneAt != null,
-                        onChanged: (checked) {
-                          _toggleTodo(item);
-                        },
-                      ),
-                      title: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () async {
-                          final controller = TextEditingController(text: item.title);
-                          final edited = await showDialog<String>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text('タスクを編集'),
-                                content: TextField(
-                                  controller: controller,
-                                  autofocus: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'タスク内容',
-                                  ),
-                                  onSubmitted: (value) {
-                                    if (value.trim().isNotEmpty) {
-                                      Navigator.of(context).pop(value);
-                                    }
-                                  },
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('キャンセル'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final value = controller.text;
-                                      if (value.trim().isNotEmpty) {
-                                        Navigator.of(context).pop(value);
-                                      }
-                                    },
-                                    child: const Text('保存'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                          if (edited != null && edited.trim().isNotEmpty) {
-                            setState(() {
-                              item.title = edited.trim();
-                            });
-                          }
-                        },
-                        child: Text(
-                          item.title,
-                          style: (_view == TodoView.done)
-                              ? const TextStyle(
-                                  color: Colors.grey,
-                                )
-                              : null,
-                        ),
                       ),
                     ),
                   ),
