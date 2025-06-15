@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'data_page.dart';
 class TodoItem {
   String title;
   DateTime? doneAt;
@@ -9,14 +9,16 @@ class TodoItem {
 
 enum TodoView { undone, done }
 
-class TodoListPage2 extends StatefulWidget {
-  const TodoListPage2({super.key});
+class TodoListPage extends StatefulWidget {
+  const TodoListPage({Key? key}) : super(key: key);
 
   @override
-  State<TodoListPage2> createState() => _TodoListPageState();
+  _TodoListPageState createState() => _TodoListPageState();
 }
 
-class _TodoListPageState extends State<TodoListPage2> {
+class _TodoListPageState extends State<TodoListPage> {
+  String _profileName = '';
+  String _profileBio = '';
   final List<TodoItem> _todosContinue = [];
   final List<TodoItem> _todosSingle = [];
   final TextEditingController _controller = TextEditingController();
@@ -24,8 +26,7 @@ class _TodoListPageState extends State<TodoListPage2> {
   int _selectedTabIndex = 3; // 4番目(todo単発タブ)を初期選択
   final PageController _pageController = PageController(initialPage: 3);
 
-  String _profileName = 'ユーザー名';
-  String _profileBio = '自己紹介を入力してください';
+  
 
   void _addTodo() {
     final text = _controller.text.trim();
@@ -717,23 +718,38 @@ class _TodoListPageState extends State<TodoListPage2> {
 
   Widget _buildMyPageTab() {
     final nameController = TextEditingController(text: _profileName);
-    final emailController = TextEditingController(); // メールアドレス用
-    final passwordController = TextEditingController(); // パスワード用
-    final bioController = TextEditingController(text: _profileBio);
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final bioController = TextEditingController(text: _profileBio);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+  final int loginDays = 5;
+  final int totalTasks = _todosContinue.length + _todosSingle.length;
+  final int completedTasks = _todosContinue.where((t) => t.doneAt != null).length +
+      _todosSingle.where((t) => t.doneAt != null).length;
+  final List<String> todayTodos = [
+    ..._todosContinue.where((t) =>
+        t.doneAt != null &&
+        t.doneAt!.year == DateTime.now().year &&
+        t.doneAt!.month == DateTime.now().month &&
+        t.doneAt!.day == DateTime.now().day).map((t) => t.title),
+    ..._todosSingle.where((t) =>
+        t.doneAt != null &&
+        t.doneAt!.year == DateTime.now().year &&
+        t.doneAt!.month == DateTime.now().month &&
+        t.doneAt!.day == DateTime.now().day).map((t) => t.title),
+  ];
+
+  return Padding(
+    padding: const EdgeInsets.all(24.0),
+    child: SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
-          const Text('マイページ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
+          // プロフィール編集ボタン
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () async {
-                // 編集ダイアログを表示
                 await showDialog(
                   context: context,
                   builder: (context) {
@@ -782,7 +798,6 @@ class _TodoListPageState extends State<TodoListPage2> {
                               _profileBio = bioController.text.trim().isEmpty
                                   ? '自己紹介を入力してください'
                                   : bioController.text.trim();
-                              // emailController.text, passwordController.text も必要なら保存
                             });
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -799,18 +814,118 @@ class _TodoListPageState extends State<TodoListPage2> {
               child: const Text('プロフィール編集'),
             ),
           ),
-          const SizedBox(height: 32),
-          const Divider(),
-          const SizedBox(height: 16),
-          Text('現在のプロフィール', style: TextStyle(color: Colors.grey[700])),
-          const SizedBox(height: 8),
-          Text(_profileName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(_profileBio, style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 24),
+          // データボタン
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('データ'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('ログイン日数: $loginDays 日'),
+                          Text('登録タスク: $totalTasks 件'),
+                          Text('完了のタスク: $completedTasks 件'),
+                          const SizedBox(height: 16),
+                          const Text('今日やったtodo', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ...todayTodos.isEmpty
+                              ? [const Text('まだありません')]
+                              : todayTodos.map((todo) => Text('- $todo')).toList(),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('閉じる'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('データ'),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // 各種詳細設定ボタン
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // 詳細設定画面やダイアログをここで表示
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('各種詳細設定'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // 通知・リマインダー設定画面へ遷移など
+                              },
+                              child: const Text('通知・リマインダー'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // 外観・デザイン設定画面へ遷移など
+                              },
+                              child: const Text('外観・デザイン'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // サウンド・バイブ設定画面へ遷移など
+                              },
+                              child: const Text('サウンド・バイブ'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // アプリ情報・ヘルプ画面へ遷移など
+                              },
+                              child: const Text('アプリ情報・ヘルプ'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('閉じる'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('各種詳細設定'),
+            ),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class Todo {
