@@ -4,7 +4,9 @@ class TodoItem {
   String title;
   DateTime? doneAt;
   bool isPinned;
-  TodoItem(this.title, {this.doneAt, this.isPinned = false});
+  bool notificationEnabled; // 通知ON/OFF
+
+  TodoItem(this.title, {this.doneAt, this.isPinned = false, this.notificationEnabled = false});
 }
 
 enum TodoView { undone, done }
@@ -17,6 +19,7 @@ class TodoListPage extends StatefulWidget {
 }
 
 class _TodoListPageState extends State<TodoListPage> {
+  // フィールド
   String _profileName = '';
   String _profileBio = '';
   final List<TodoItem> _todosContinue = [];
@@ -26,6 +29,7 @@ class _TodoListPageState extends State<TodoListPage> {
   int _selectedTabIndex = 3; // 4番目(todo単発タブ)を初期選択
   final PageController _pageController = PageController(initialPage: 3);
 
+  // ここから下、すべてクラスの中に入れる！
   
 
   void _addTodo() {
@@ -717,12 +721,12 @@ class _TodoListPageState extends State<TodoListPage> {
   }
 
   Widget _buildMyPageTab() {
-    final nameController = TextEditingController(text: _profileName);
+  final nameController = TextEditingController(text: _profileName);
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final bioController = TextEditingController(text: _profileBio);
 
-  final int loginDays = 5;
+  final int loginDays = 0;
   final int totalTasks = _todosContinue.length + _todosSingle.length;
   final int completedTasks = _todosContinue.where((t) => t.doneAt != null).length +
       _todosSingle.where((t) => t.doneAt != null).length;
@@ -745,7 +749,60 @@ class _TodoListPageState extends State<TodoListPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // プロフィール編集ボタン
+          // 1. ログインボタン
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green, // ボタンの背景色を緑に
+                foregroundColor: Colors.white, // 文字色を白に
+              ),
+              onPressed: () async {
+                final emailController = TextEditingController();
+                final passwordController = TextEditingController();
+                await showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('ログイン'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: emailController,
+                            decoration: const InputDecoration(labelText: 'メールアドレス'),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: passwordController,
+                            decoration: const InputDecoration(labelText: 'パスワード'),
+                            obscureText: true,
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('キャンセル'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            // ログイン処理をここに実装
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('ログイン'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('ログイン'),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // 2. プロフィール編集
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -762,18 +819,6 @@ class _TodoListPageState extends State<TodoListPage> {
                             TextField(
                               controller: nameController,
                               decoration: const InputDecoration(labelText: '名前'),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: emailController,
-                              decoration: const InputDecoration(labelText: 'メールアドレス'),
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: passwordController,
-                              decoration: const InputDecoration(labelText: 'パスワード'),
-                              obscureText: true,
                             ),
                             const SizedBox(height: 12),
                             TextField(
@@ -815,7 +860,7 @@ class _TodoListPageState extends State<TodoListPage> {
             ),
           ),
           const SizedBox(height: 24),
-          // データボタン
+          // 3. データ
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -853,12 +898,11 @@ class _TodoListPageState extends State<TodoListPage> {
             ),
           ),
           const SizedBox(height: 24),
-          // 各種詳細設定ボタン
+          // 4. 各種詳細設定
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // 詳細設定画面やダイアログをここで表示
                 showDialog(
                   context: context,
                   builder: (context) {
@@ -921,31 +965,42 @@ class _TodoListPageState extends State<TodoListPage> {
               child: const Text('各種詳細設定'),
             ),
           ),
+          const SizedBox(height: 24),
+          // 5. 12時を過ぎた場合
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('12時を過ぎた場合'),
+                    content: const Text('12時を過ぎた場合のアクションをここに追加できます。'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('閉じる'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: const Text('12時を過ぎた場合'),
+            ),
+          ),
         ],
       ),
     ),
-  );
-}
-}
+  ); // Paddingのカッコ
+}   // _buildMyPageTab() のカッコ
 
+}   // _TodoListPageState クラスのカッコ ← これが必須！
+
+// ここから下はクラスの外
 class Todo {
-  String title;
-  DateTime date;
-
-  Todo(this.title, this.date);
+  // ...
 }
 
 class TodoManager {
-  List<Todo> todos = [];
-
-  // 今日のToDoを追加
-  void addTodayTodo(String title) {
-    todos.add(Todo(title, DateTime.now()));
-  }
-
-  // 日付順で取得
-  List<Todo> getTodosSortedByDate() {
-    todos.sort((a, b) => a.date.compareTo(b.date));
-    return todos;
-  }
+  // ...
 }
