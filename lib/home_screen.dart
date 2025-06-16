@@ -14,6 +14,7 @@ class TodoItem {
   bool isPinned;
   List<TodoChecklistItem> checklist;
   DateTime? notificationTime; // ←追加
+  DateTime? dueDate; // 追加
 
   TodoItem(
     this.title, {
@@ -21,7 +22,8 @@ class TodoItem {
     this.doneAt,
     this.isPinned = false,
     List<TodoChecklistItem>? checklist,
-    this.notificationTime, // ←追加
+    this.notificationTime,
+    this.dueDate, // ←追加
   }) : checklist = checklist ?? [];
 }
 
@@ -259,7 +261,8 @@ class _TodoListPageState extends State<TodoListPage> {
                     List<TodoChecklistItem> tempChecklist = [];
                     List<TextEditingController> checklistControllers = [];
                     final checklistScrollController = ScrollController();
-                    DateTime? notificationTime; // ←追加
+                    DateTime? notificationTime;
+                    DateTime? dueDate; // ← ここを追加
 
                     final text = await showDialog<String>(
                       context: context,
@@ -430,6 +433,43 @@ class _TodoListPageState extends State<TodoListPage> {
                                           IconButton(
                                             icon: const Icon(Icons.close, size: 18),
                                             onPressed: () => setState(() => notificationTime = null),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.event, color: Colors.deepPurple),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            dueDate == null
+                                                ? '期限日を設定しない'
+                                                : '期限: ${dueDate!.year}/${dueDate!.month.toString().padLeft(2, '0')}/${dueDate!.day.toString().padLeft(2, '0')}',
+                                            style: const TextStyle(fontSize: 15),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            final now = DateTime.now();
+                                            final picked = await showDatePicker(
+                                              context: context,
+                                              initialDate: dueDate ?? now,
+                                              firstDate: now,
+                                              lastDate: DateTime(now.year + 5),
+                                            );
+                                            if (picked != null) {
+                                              setState(() {
+                                                dueDate = picked;
+                                              });
+                                            }
+                                          },
+                                          child: const Text('期限を設定'),
+                                        ),
+                                        if (dueDate != null)
+                                          IconButton(
+                                            icon: const Icon(Icons.close, size: 18),
+                                            onPressed: () => setState(() => dueDate = null),
                                           ),
                                       ],
                                     ),
@@ -800,7 +840,6 @@ class _TodoListPageState extends State<TodoListPage> {
                                                 ],
                                               );
                                             }),
-                                            // ↓ここに通知機能UIを追加
                                             const SizedBox(height: 16),
                                             Row(
                                               children: [
@@ -864,6 +903,43 @@ class _TodoListPageState extends State<TodoListPage> {
                                                   ),
                                               ],
                                             ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.event, color: Colors.deepPurple),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    item.dueDate == null
+                                                        ? '期限日を設定しない'
+                                                        : '期限: ${item.dueDate!.year}/${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
+                                                    style: const TextStyle(fontSize: 15),
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    final now = DateTime.now();
+                                                    final picked = await showDatePicker(
+                                                      context: context,
+                                                      initialDate: item.dueDate ?? now,
+                                                      firstDate: now,
+                                                      lastDate: DateTime(now.year + 5),
+                                                    );
+                                                    if (picked != null) {
+                                                      setState(() {
+                                                        item.dueDate = picked;
+                                                      });
+                                                    }
+                                                  },
+                                                  child: const Text('期限を設定'),
+                                                ),
+                                                if (item.dueDate != null)
+                                                  IconButton(
+                                                    icon: const Icon(Icons.close, size: 18),
+                                                    onPressed: () => setState(() => item.dueDate = null),
+                                                  ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -897,9 +973,26 @@ class _TodoListPageState extends State<TodoListPage> {
                                 : null,
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _removeTodo(item),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (item.dueDate != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Text(
+                                  '${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    color: Colors.deepPurple,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _removeTodo(item),
+                            ),
+                          ],
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -918,6 +1011,20 @@ class _TodoListPageState extends State<TodoListPage> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
+                                      style: const TextStyle(color: Colors.deepPurple, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (item.dueDate != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.event, size: 16, color: Colors.deepPurple),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '期限: ${item.dueDate!.year}/${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
                                       style: const TextStyle(color: Colors.deepPurple, fontSize: 13),
                                     ),
                                   ],
@@ -1138,9 +1245,26 @@ class _TodoListPageState extends State<TodoListPage> {
                                 : null,
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _removeTodo(item),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (item.dueDate != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Text(
+                                  '${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    color: Colors.deepPurple,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _removeTodo(item),
+                            ),
+                          ],
                         ),
                         subtitle: item.memo.isNotEmpty
                             ? Text(
