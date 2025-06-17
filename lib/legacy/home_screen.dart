@@ -88,12 +88,12 @@ class _TodoListPageState extends State<TodoListPage> {
     final List<TodoItem> displayList = _view == TodoView.undone
         ? _todosContinue.where((t) => t.doneAt == null).toList()
         : _todosContinue.where((t) => t.doneAt != null).toList()
-            ..sort((a, b) {
-              if (a.doneAt == null && b.doneAt == null) return 0;
-              if (a.doneAt == null) return 1;
-              if (b.doneAt == null) return -1;
-              return a.doneAt!.compareTo(b.doneAt!);
-            });
+      ..sort((a, b) {
+        if (a.doneAt == null && b.doneAt == null) return 0;
+        if (a.doneAt == null) return 1;
+        if (b.doneAt == null) return -1;
+        return a.doneAt!.compareTo(b.doneAt!);
+      });
 
     // タブごとのタイトル
     final tabTitles = [
@@ -189,8 +189,12 @@ class _TodoListPageState extends State<TodoListPage> {
                         // ここで「未」「済」の順番を逆にする
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _view == TodoView.undone ? Colors.deepPurple : Colors.white,
-                            foregroundColor: _view == TodoView.undone ? Colors.white : Colors.deepPurple,
+                            backgroundColor: _view == TodoView.undone
+                                ? Colors.deepPurple
+                                : Colors.white,
+                            foregroundColor: _view == TodoView.undone
+                                ? Colors.white
+                                : Colors.deepPurple,
                             elevation: _view == TodoView.undone ? 4 : 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
@@ -210,8 +214,12 @@ class _TodoListPageState extends State<TodoListPage> {
                         const SizedBox(width: 8),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _view == TodoView.done ? Colors.deepPurple : Colors.white,
-                            foregroundColor: _view == TodoView.done ? Colors.white : Colors.deepPurple,
+                            backgroundColor: _view == TodoView.done
+                                ? Colors.deepPurple
+                                : Colors.white,
+                            foregroundColor: _view == TodoView.done
+                                ? Colors.white
+                                : Colors.deepPurple,
                             elevation: _view == TodoView.done ? 4 : 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
@@ -237,9 +245,11 @@ class _TodoListPageState extends State<TodoListPage> {
         ],
       ),
       // タスク追加ボタンもTODO継続・TODO単発タブのみ
-      floatingActionButton: (_view == TodoView.undone && (_selectedTabIndex == 1 || _selectedTabIndex == 3))
+      floatingActionButton: (_view == TodoView.undone &&
+              (_selectedTabIndex == 1 || _selectedTabIndex == 3))
           ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -272,7 +282,8 @@ class _TodoListPageState extends State<TodoListPage> {
                             void scrollToEnd() {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 checklistScrollController.animateTo(
-                                  checklistScrollController.position.maxScrollExtent,
+                                  checklistScrollController
+                                      .position.maxScrollExtent,
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeOut,
                                 );
@@ -303,14 +314,18 @@ class _TodoListPageState extends State<TodoListPage> {
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        const Text('チェックリスト', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        const Text('チェックリスト',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                         const Spacer(),
                                         IconButton(
                                           icon: const Icon(Icons.add),
                                           onPressed: () {
                                             setState(() {
-                                              tempChecklist.add(TodoChecklistItem(''));
-                                              checklistControllers.add(TextEditingController());
+                                              tempChecklist
+                                                  .add(TodoChecklistItem(''));
+                                              checklistControllers
+                                                  .add(TextEditingController());
                                             });
                                             scrollToEnd();
                                           },
@@ -324,13 +339,15 @@ class _TodoListPageState extends State<TodoListPage> {
                                             value: tempChecklist[i].isChecked,
                                             onChanged: (checked) {
                                               setState(() {
-                                                tempChecklist[i].isChecked = checked ?? false;
+                                                tempChecklist[i].isChecked =
+                                                    checked ?? false;
                                               });
                                             },
                                           ),
                                           Expanded(
                                             child: TextField(
-                                              controller: checklistControllers[i],
+                                              controller:
+                                                  checklistControllers[i],
                                               decoration: const InputDecoration(
                                                 hintText: 'チェックリスト項目',
                                               ),
@@ -344,7 +361,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                             onPressed: () {
                                               setState(() {
                                                 tempChecklist.removeAt(i);
-                                                checklistControllers.removeAt(i);
+                                                checklistControllers
+                                                    .removeAt(i);
                                               });
                                             },
                                           ),
@@ -359,7 +377,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                             title: const Text('継続'),
                                             value: 0,
                                             groupValue: selectedTab,
-                                            onChanged: (val) => setState(() => selectedTab = val),
+                                            onChanged: (val) => setState(
+                                                () => selectedTab = val),
                                           ),
                                         ),
                                         Expanded(
@@ -367,7 +386,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                             title: const Text('単発'),
                                             value: 1,
                                             groupValue: selectedTab,
-                                            onChanged: (val) => setState(() => selectedTab = val),
+                                            onChanged: (val) => setState(
+                                                () => selectedTab = val),
                                           ),
                                         ),
                                       ],
@@ -376,49 +396,70 @@ class _TodoListPageState extends State<TodoListPage> {
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        const Icon(Icons.notifications, color: Colors.deepPurple),
+                                        const Icon(Icons.notifications,
+                                            color: Colors.deepPurple),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             notificationTime == null
                                                 ? '通知時刻を設定しない'
                                                 : '通知: ${notificationTime!.hour.toString().padLeft(2, '0')}:${notificationTime!.minute.toString().padLeft(2, '0')}',
-                                            style: const TextStyle(fontSize: 15),
+                                            style:
+                                                const TextStyle(fontSize: 15),
                                           ),
                                         ),
                                         TextButton(
                                           onPressed: () async {
                                             final now = DateTime.now();
-                                            DateTime tempTime = notificationTime ?? DateTime(now.year, now.month, now.day, now.hour, now.minute);
+                                            DateTime tempTime =
+                                                notificationTime ??
+                                                    DateTime(
+                                                        now.year,
+                                                        now.month,
+                                                        now.day,
+                                                        now.hour,
+                                                        now.minute);
 
                                             await showDialog(
                                               context: context,
                                               builder: (context) {
                                                 return AlertDialog(
-                                                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 16,
+                                                          horizontal: 8),
                                                   content: SizedBox(
                                                     height: 200,
                                                     width: 300,
                                                     child: CupertinoDatePicker(
-                                                      mode: CupertinoDatePickerMode.time,
+                                                      mode:
+                                                          CupertinoDatePickerMode
+                                                              .time,
                                                       initialDateTime: tempTime,
                                                       use24hFormat: true,
-                                                      onDateTimeChanged: (DateTime newTime) {
+                                                      onDateTimeChanged:
+                                                          (DateTime newTime) {
                                                         tempTime = newTime;
                                                       },
                                                     ),
                                                   ),
                                                   actions: [
                                                     TextButton(
-                                                      onPressed: () => Navigator.of(context).pop(),
-                                                      child: const Text('キャンセル'),
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(),
+                                                      child:
+                                                          const Text('キャンセル'),
                                                     ),
                                                     ElevatedButton(
                                                       onPressed: () {
                                                         setState(() {
-                                                          notificationTime = tempTime;
+                                                          notificationTime =
+                                                              tempTime;
                                                         });
-                                                        Navigator.of(context).pop();
+                                                        Navigator.of(context)
+                                                            .pop();
                                                       },
                                                       child: const Text('決定'),
                                                     ),
@@ -431,22 +472,26 @@ class _TodoListPageState extends State<TodoListPage> {
                                         ),
                                         if (notificationTime != null)
                                           IconButton(
-                                            icon: const Icon(Icons.close, size: 18),
-                                            onPressed: () => setState(() => notificationTime = null),
+                                            icon: const Icon(Icons.close,
+                                                size: 18),
+                                            onPressed: () => setState(
+                                                () => notificationTime = null),
                                           ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        const Icon(Icons.event, color: Colors.deepPurple),
+                                        const Icon(Icons.event,
+                                            color: Colors.deepPurple),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             dueDate == null
                                                 ? '期限日を設定しない'
                                                 : '期限: ${dueDate!.year}/${dueDate!.month.toString().padLeft(2, '0')}/${dueDate!.day.toString().padLeft(2, '0')}',
-                                            style: const TextStyle(fontSize: 15),
+                                            style:
+                                                const TextStyle(fontSize: 15),
                                           ),
                                         ),
                                         TextButton(
@@ -468,8 +513,10 @@ class _TodoListPageState extends State<TodoListPage> {
                                         ),
                                         if (dueDate != null)
                                           IconButton(
-                                            icon: const Icon(Icons.close, size: 18),
-                                            onPressed: () => setState(() => dueDate = null),
+                                            icon: const Icon(Icons.close,
+                                                size: 18),
+                                            onPressed: () =>
+                                                setState(() => dueDate = null),
                                           ),
                                       ],
                                     ),
@@ -497,22 +544,32 @@ class _TodoListPageState extends State<TodoListPage> {
                     );
                     if (text == 'OK' && controller.text.trim().isNotEmpty) {
                       setState(() {
-                        int tab = selectedTab ?? (_selectedTabIndex == 1 ? 0 : _selectedTabIndex == 3 ? 1 : 0);
+                        int tab = selectedTab ??
+                            (_selectedTabIndex == 1
+                                ? 0
+                                : _selectedTabIndex == 3
+                                    ? 1
+                                    : 0);
                         final title = controller.text.trim();
                         final memo = memoController.text.trim();
-                        final checklist = tempChecklist.where((c) => c.title.trim().isNotEmpty).toList();
+                        final checklist = tempChecklist
+                            .where((c) => c.title.trim().isNotEmpty)
+                            .toList();
                         if (tab == 0) {
                           _todosContinue.add(TodoItem(
                             title,
                             memo: memo,
                             checklist: checklist,
-                            notificationTime: notificationTime, // ←追加
+                            notificationTime: notificationTime,
+                            dueDate: dueDate, // ←追加
                           ));
                         } else {
                           _todosSingle.add(TodoItem(
                             title,
                             memo: memo,
                             checklist: checklist,
+                            notificationTime: notificationTime,
+                            dueDate: dueDate, // 単発タスクにも追加
                           ));
                         }
                       });
@@ -548,11 +605,15 @@ class _TodoListPageState extends State<TodoListPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(8),
-                      color: _selectedTabIndex == 0 ? Colors.deepPurple : Colors.grey[300],
+                      color: _selectedTabIndex == 0
+                          ? Colors.deepPurple
+                          : Colors.grey[300],
                     ),
                     padding: const EdgeInsets.all(8),
                     child: Icon(Icons.emoji_events,
-                        color: _selectedTabIndex == 0 ? Colors.white : Colors.deepPurple),
+                        color: _selectedTabIndex == 0
+                            ? Colors.white
+                            : Colors.deepPurple),
                   ),
                   onPressed: () => _onTabTapped(0),
                   tooltip: '実績',
@@ -563,11 +624,15 @@ class _TodoListPageState extends State<TodoListPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(8),
-                      color: _selectedTabIndex == 1 ? Colors.deepPurple : Colors.grey[300],
+                      color: _selectedTabIndex == 1
+                          ? Colors.deepPurple
+                          : Colors.grey[300],
                     ),
                     padding: const EdgeInsets.all(8),
                     child: Icon(Icons.assignment, // ←ここを修正
-                        color: _selectedTabIndex == 1 ? Colors.white : Colors.deepPurple),
+                        color: _selectedTabIndex == 1
+                            ? Colors.white
+                            : Colors.deepPurple),
                   ),
                   onPressed: () => _onTabTapped(1),
                   tooltip: 'todo継続',
@@ -577,11 +642,15 @@ class _TodoListPageState extends State<TodoListPage> {
                   icon: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _selectedTabIndex == 2 ? Colors.deepPurple : Colors.grey[300],
+                      color: _selectedTabIndex == 2
+                          ? Colors.deepPurple
+                          : Colors.grey[300],
                     ),
                     padding: const EdgeInsets.all(10),
                     child: Icon(Icons.casino,
-                        color: _selectedTabIndex == 2 ? Colors.white : Colors.deepPurple),
+                        color: _selectedTabIndex == 2
+                            ? Colors.white
+                            : Colors.deepPurple),
                   ),
                   onPressed: () => _onTabTapped(2),
                   tooltip: 'すごろく',
@@ -592,11 +661,15 @@ class _TodoListPageState extends State<TodoListPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(8),
-                      color: _selectedTabIndex == 3 ? Colors.deepPurple : Colors.grey[300],
+                      color: _selectedTabIndex == 3
+                          ? Colors.deepPurple
+                          : Colors.grey[300],
                     ),
                     padding: const EdgeInsets.all(8),
                     child: Icon(Icons.check_box,
-                        color: _selectedTabIndex == 3 ? Colors.white : Colors.deepPurple),
+                        color: _selectedTabIndex == 3
+                            ? Colors.white
+                            : Colors.deepPurple),
                   ),
                   onPressed: () => _onTabTapped(3),
                   tooltip: 'todo単発',
@@ -607,11 +680,15 @@ class _TodoListPageState extends State<TodoListPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(8),
-                      color: _selectedTabIndex == 4 ? Colors.deepPurple : Colors.grey[300],
+                      color: _selectedTabIndex == 4
+                          ? Colors.deepPurple
+                          : Colors.grey[300],
                     ),
                     padding: const EdgeInsets.all(8),
                     child: Icon(Icons.person,
-                        color: _selectedTabIndex == 4 ? Colors.white : Colors.deepPurple),
+                        color: _selectedTabIndex == 4
+                            ? Colors.white
+                            : Colors.deepPurple),
                   ),
                   onPressed: () => _onTabTapped(4),
                   tooltip: 'マイページ',
@@ -638,12 +715,12 @@ class _TodoListPageState extends State<TodoListPage> {
     final List<TodoItem> displayList = _view == TodoView.undone
         ? _todosContinue.where((t) => t.doneAt == null).toList()
         : _todosContinue.where((t) => t.doneAt != null).toList()
-            ..sort((a, b) {
-              if (a.doneAt == null && b.doneAt == null) return 0;
-              if (a.doneAt == null) return 1;
-              if (b.doneAt == null) return -1;
-              return a.doneAt!.compareTo(b.doneAt!);
-            });
+      ..sort((a, b) {
+        if (a.doneAt == null && b.doneAt == null) return 0;
+        if (a.doneAt == null) return 1;
+        if (b.doneAt == null) return -1;
+        return a.doneAt!.compareTo(b.doneAt!);
+      });
 
     // 検索クエリがあればフィルタ
     final filteredList = _searchQuery.isEmpty
@@ -673,7 +750,8 @@ class _TodoListPageState extends State<TodoListPage> {
                 }
 
                 final item = orderedList.removeAt(oldIndex);
-                orderedList.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+                orderedList.insert(
+                    newIndex > oldIndex ? newIndex - 1 : newIndex, item);
 
                 _todosContinue
                   ..remove(item)
@@ -685,7 +763,8 @@ class _TodoListPageState extends State<TodoListPage> {
               final item = orderedList[index];
               return Padding(
                 key: ValueKey(item),
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: ReorderableDelayedDragStartListener(
                   index: index,
                   child: Container(
@@ -713,7 +792,9 @@ class _TodoListPageState extends State<TodoListPage> {
                         alignment: Alignment.centerLeft,
                         padding: const EdgeInsets.only(left: 20),
                         child: Icon(
-                          item.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                          item.isPinned
+                              ? Icons.push_pin_outlined
+                              : Icons.push_pin,
                           color: Colors.white,
                         ),
                       ),
@@ -751,11 +832,21 @@ class _TodoListPageState extends State<TodoListPage> {
                         title: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () async {
-                            final controller = TextEditingController(text: item.title);
-                            final memoController = TextEditingController(text: item.memo);
-                            List<TodoChecklistItem> tempChecklist = item.checklist.map((c) => TodoChecklistItem(c.title, isChecked: c.isChecked)).toList();
-                            final checklistControllers = tempChecklist.map((c) => TextEditingController(text: c.title)).toList();
-                            final checklistScrollController = ScrollController(); // 追加
+                            final controller =
+                                TextEditingController(text: item.title);
+                            final memoController =
+                                TextEditingController(text: item.memo);
+                            List<TodoChecklistItem> tempChecklist = item
+                                .checklist
+                                .map((c) => TodoChecklistItem(c.title,
+                                    isChecked: c.isChecked))
+                                .toList();
+                            final checklistControllers = tempChecklist
+                                .map(
+                                    (c) => TextEditingController(text: c.title))
+                                .toList();
+                            final checklistScrollController =
+                                ScrollController(); // 追加
 
                             await showDialog<void>(
                               context: context,
@@ -763,10 +854,13 @@ class _TodoListPageState extends State<TodoListPage> {
                                 return StatefulBuilder(
                                   builder: (context, setState) {
                                     void scrollToEnd() {
-                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
                                         checklistScrollController.animateTo(
-                                          checklistScrollController.position.maxScrollExtent,
-                                          duration: const Duration(milliseconds: 300),
+                                          checklistScrollController
+                                              .position.maxScrollExtent,
+                                          duration:
+                                              const Duration(milliseconds: 300),
                                           curve: Curves.easeOut,
                                         );
                                       });
@@ -775,65 +869,85 @@ class _TodoListPageState extends State<TodoListPage> {
                                     return AlertDialog(
                                       title: const Text('タスクを編集'),
                                       content: SingleChildScrollView(
-                                        controller: checklistScrollController, // 追加
+                                        controller:
+                                            checklistScrollController, // 追加
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             TextField(
                                               controller: controller,
                                               autofocus: true,
-                                              decoration: const InputDecoration(labelText: 'タスク内容'),
+                                              decoration: const InputDecoration(
+                                                  labelText: 'タスク内容'),
                                             ),
                                             const SizedBox(height: 8),
                                             TextField(
                                               controller: memoController,
-                                              decoration: const InputDecoration(labelText: '詳細メモ'),
+                                              decoration: const InputDecoration(
+                                                  labelText: '詳細メモ'),
                                             ),
                                             const SizedBox(height: 16),
                                             Row(
                                               children: [
-                                                const Text('チェックリスト', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                const Text('チェックリスト',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
                                                 const Spacer(),
                                                 IconButton(
                                                   icon: const Icon(Icons.add),
                                                   onPressed: () {
                                                     setState(() {
-                                                      tempChecklist.add(TodoChecklistItem(''));
-                                                      checklistControllers.add(TextEditingController());
+                                                      tempChecklist.add(
+                                                          TodoChecklistItem(
+                                                              ''));
+                                                      checklistControllers.add(
+                                                          TextEditingController());
                                                     });
                                                     scrollToEnd(); // 追加
                                                   },
                                                 ),
                                               ],
                                             ),
-                                            ...List.generate(tempChecklist.length, (i) {
+                                            ...List.generate(
+                                                tempChecklist.length, (i) {
                                               return Row(
                                                 children: [
                                                   Checkbox(
-                                                    value: tempChecklist[i].isChecked,
+                                                    value: tempChecklist[i]
+                                                        .isChecked,
                                                     onChanged: (checked) {
                                                       setState(() {
-                                                        tempChecklist[i].isChecked = checked ?? false;
+                                                        tempChecklist[i]
+                                                                .isChecked =
+                                                            checked ?? false;
                                                       });
                                                     },
                                                   ),
                                                   Expanded(
                                                     child: TextField(
-                                                      controller: checklistControllers[i],
-                                                      decoration: const InputDecoration(
+                                                      controller:
+                                                          checklistControllers[
+                                                              i],
+                                                      decoration:
+                                                          const InputDecoration(
                                                         hintText: 'チェックリスト項目',
                                                       ),
                                                       onChanged: (val) {
-                                                        tempChecklist[i].title = val;
+                                                        tempChecklist[i].title =
+                                                            val;
                                                       },
                                                     ),
                                                   ),
                                                   IconButton(
-                                                    icon: const Icon(Icons.delete),
+                                                    icon: const Icon(
+                                                        Icons.delete),
                                                     onPressed: () {
                                                       setState(() {
-                                                        tempChecklist.removeAt(i);
-                                                        checklistControllers.removeAt(i);
+                                                        tempChecklist
+                                                            .removeAt(i);
+                                                        checklistControllers
+                                                            .removeAt(i);
                                                       });
                                                     },
                                                   ),
@@ -843,51 +957,82 @@ class _TodoListPageState extends State<TodoListPage> {
                                             const SizedBox(height: 16),
                                             Row(
                                               children: [
-                                                const Icon(Icons.notifications, color: Colors.deepPurple),
+                                                const Icon(Icons.notifications,
+                                                    color: Colors.deepPurple),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
-                                                    item.notificationTime == null
+                                                    item.notificationTime ==
+                                                            null
                                                         ? '通知時刻を設定しない'
                                                         : '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
-                                                    style: const TextStyle(fontSize: 15),
+                                                    style: const TextStyle(
+                                                        fontSize: 15),
                                                   ),
                                                 ),
                                                 TextButton(
                                                   onPressed: () async {
                                                     final now = DateTime.now();
-                                                    DateTime tempTime = item.notificationTime ?? DateTime(now.year, now.month, now.day, now.hour, now.minute);
+                                                    DateTime tempTime =
+                                                        item.notificationTime ??
+                                                            DateTime(
+                                                                now.year,
+                                                                now.month,
+                                                                now.day,
+                                                                now.hour,
+                                                                now.minute);
 
                                                     await showDialog(
                                                       context: context,
                                                       builder: (context) {
                                                         return AlertDialog(
-                                                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                                          contentPadding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  vertical: 16,
+                                                                  horizontal:
+                                                                      8),
                                                           content: SizedBox(
                                                             height: 200,
                                                             width: 300,
-                                                            child: CupertinoDatePicker(
-                                                              mode: CupertinoDatePickerMode.time,
-                                                              initialDateTime: tempTime,
-                                                              use24hFormat: true,
-                                                              onDateTimeChanged: (DateTime newTime) {
-                                                                tempTime = newTime;
+                                                            child:
+                                                                CupertinoDatePicker(
+                                                              mode:
+                                                                  CupertinoDatePickerMode
+                                                                      .time,
+                                                              initialDateTime:
+                                                                  tempTime,
+                                                              use24hFormat:
+                                                                  true,
+                                                              onDateTimeChanged:
+                                                                  (DateTime
+                                                                      newTime) {
+                                                                tempTime =
+                                                                    newTime;
                                                               },
                                                             ),
                                                           ),
                                                           actions: [
                                                             TextButton(
-                                                              onPressed: () => Navigator.of(context).pop(),
-                                                              child: const Text('キャンセル'),
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop(),
+                                                              child: const Text(
+                                                                  'キャンセル'),
                                                             ),
                                                             ElevatedButton(
                                                               onPressed: () {
                                                                 setState(() {
-                                                                  item.notificationTime = tempTime;
+                                                                  item.notificationTime =
+                                                                      tempTime;
                                                                 });
-                                                                Navigator.of(context).pop();
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
                                                               },
-                                                              child: const Text('決定'),
+                                                              child: const Text(
+                                                                  '決定'),
                                                             ),
                                                           ],
                                                         );
@@ -896,34 +1041,44 @@ class _TodoListPageState extends State<TodoListPage> {
                                                   },
                                                   child: const Text('時刻を設定'),
                                                 ),
-                                                if (item.notificationTime != null)
+                                                if (item.notificationTime !=
+                                                    null)
                                                   IconButton(
-                                                    icon: const Icon(Icons.close, size: 18),
-                                                    onPressed: () => setState(() => item.notificationTime = null),
+                                                    icon: const Icon(
+                                                        Icons.close,
+                                                        size: 18),
+                                                    onPressed: () => setState(() =>
+                                                        item.notificationTime =
+                                                            null),
                                                   ),
                                               ],
                                             ),
                                             const SizedBox(height: 16),
                                             Row(
                                               children: [
-                                                const Icon(Icons.event, color: Colors.deepPurple),
+                                                const Icon(Icons.event,
+                                                    color: Colors.deepPurple),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
                                                     item.dueDate == null
                                                         ? '期限日を設定しない'
                                                         : '期限: ${item.dueDate!.year}/${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
-                                                    style: const TextStyle(fontSize: 15),
+                                                    style: const TextStyle(
+                                                        fontSize: 15),
                                                   ),
                                                 ),
                                                 TextButton(
                                                   onPressed: () async {
                                                     final now = DateTime.now();
-                                                    final picked = await showDatePicker(
+                                                    final picked =
+                                                        await showDatePicker(
                                                       context: context,
-                                                      initialDate: item.dueDate ?? now,
+                                                      initialDate:
+                                                          item.dueDate ?? now,
                                                       firstDate: now,
-                                                      lastDate: DateTime(now.year + 5),
+                                                      lastDate: DateTime(
+                                                          now.year + 5),
                                                     );
                                                     if (picked != null) {
                                                       setState(() {
@@ -935,8 +1090,12 @@ class _TodoListPageState extends State<TodoListPage> {
                                                 ),
                                                 if (item.dueDate != null)
                                                   IconButton(
-                                                    icon: const Icon(Icons.close, size: 18),
-                                                    onPressed: () => setState(() => item.dueDate = null),
+                                                    icon: const Icon(
+                                                        Icons.close,
+                                                        size: 18),
+                                                    onPressed: () => setState(
+                                                        () => item.dueDate =
+                                                            null),
                                                   ),
                                               ],
                                             ),
@@ -945,15 +1104,21 @@ class _TodoListPageState extends State<TodoListPage> {
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(context).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
                                           child: const Text('キャンセル'),
                                         ),
                                         ElevatedButton(
                                           onPressed: () {
                                             setState(() {
-                                              item.title = controller.text.trim();
-                                              item.memo = memoController.text.trim();
-                                              item.checklist = tempChecklist.where((c) => c.title.trim().isNotEmpty).toList();
+                                              item.title =
+                                                  controller.text.trim();
+                                              item.memo =
+                                                  memoController.text.trim();
+                                              item.checklist = tempChecklist
+                                                  .where((c) =>
+                                                      c.title.trim().isNotEmpty)
+                                                  .toList();
                                             });
                                             Navigator.of(context).pop();
                                           },
@@ -1000,36 +1165,28 @@ class _TodoListPageState extends State<TodoListPage> {
                             if (item.memo.isNotEmpty)
                               Text(
                                 item.memo,
-                                style: const TextStyle(color: Colors.black54, fontSize: 13),
+                                style: const TextStyle(
+                                    color: Colors.black54, fontSize: 13),
                               ),
                             if (item.notificationTime != null)
                               Padding(
-                                padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
+                                padding: const EdgeInsets.only(
+                                    top: 2.0, bottom: 2.0),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.notifications, size: 16, color: Colors.deepPurple),
+                                    const Icon(Icons.notifications,
+                                        size: 16, color: Colors.deepPurple),
                                     const SizedBox(width: 4),
                                     Text(
                                       '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
-                                      style: const TextStyle(color: Colors.deepPurple, fontSize: 13),
+                                      style: const TextStyle(
+                                          color: Colors.deepPurple,
+                                          fontSize: 13),
                                     ),
                                   ],
                                 ),
                               ),
-                            if (item.dueDate != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.event, size: 16, color: Colors.deepPurple),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '期限: ${item.dueDate!.year}/${item.dueDate!.month.toString().padLeft(2, '0')}/${item.dueDate!.day.toString().padLeft(2, '0')}',
-                                      style: const TextStyle(color: Colors.deepPurple, fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            // 期限日はtrailingに表示するため、ここでは表示しない
                             if (item.checklist.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
@@ -1041,7 +1198,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                           value: checkItem.isChecked,
                                           onChanged: (checked) {
                                             setState(() {
-                                              checkItem.isChecked = checked ?? false;
+                                              checkItem.isChecked =
+                                                  checked ?? false;
                                             });
                                           },
                                           visualDensity: VisualDensity.compact,
@@ -1050,8 +1208,12 @@ class _TodoListPageState extends State<TodoListPage> {
                                           child: Text(
                                             checkItem.title,
                                             style: TextStyle(
-                                              decoration: checkItem.isChecked ? TextDecoration.lineThrough : null,
-                                              color: checkItem.isChecked ? Colors.grey : Colors.black87,
+                                              decoration: checkItem.isChecked
+                                                  ? TextDecoration.lineThrough
+                                                  : null,
+                                              color: checkItem.isChecked
+                                                  ? Colors.grey
+                                                  : Colors.black87,
                                               fontSize: 14,
                                             ),
                                           ),
@@ -1066,7 +1228,7 @@ class _TodoListPageState extends State<TodoListPage> {
                       ),
                     ),
                   ),
-                ),  // ← Paddingのカッコ
+                ), // ← Paddingのカッコ
               );
             },
           ),
@@ -1083,12 +1245,12 @@ class _TodoListPageState extends State<TodoListPage> {
     final List<TodoItem> displayList = _view == TodoView.undone
         ? _todosSingle.where((t) => t.doneAt == null).toList()
         : _todosSingle.where((t) => t.doneAt != null).toList()
-            ..sort((a, b) {
-              if (a.doneAt == null && b.doneAt == null) return 0;
-              if (a.doneAt == null) return 1;
-              if (b.doneAt == null) return -1;
-              return a.doneAt!.compareTo(b.doneAt!);
-            });
+      ..sort((a, b) {
+        if (a.doneAt == null && b.doneAt == null) return 0;
+        if (a.doneAt == null) return 1;
+        if (b.doneAt == null) return -1;
+        return a.doneAt!.compareTo(b.doneAt!);
+      });
 
     // 検索クエリがあればフィルタ
     final filteredList = _searchQuery.isEmpty
@@ -1117,7 +1279,8 @@ class _TodoListPageState extends State<TodoListPage> {
                 }
 
                 final item = orderedList.removeAt(oldIndex);
-                orderedList.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+                orderedList.insert(
+                    newIndex > oldIndex ? newIndex - 1 : newIndex, item);
 
                 _todosSingle
                   ..remove(item)
@@ -1129,7 +1292,8 @@ class _TodoListPageState extends State<TodoListPage> {
               final item = orderedList[index];
               return Padding(
                 key: ValueKey(item),
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: ReorderableDelayedDragStartListener(
                   index: index,
                   child: Container(
@@ -1157,7 +1321,9 @@ class _TodoListPageState extends State<TodoListPage> {
                         alignment: Alignment.centerLeft,
                         padding: const EdgeInsets.only(left: 20),
                         child: Icon(
-                          item.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                          item.isPinned
+                              ? Icons.push_pin_outlined
+                              : Icons.push_pin,
                           color: Colors.white,
                         ),
                       ),
@@ -1194,7 +1360,8 @@ class _TodoListPageState extends State<TodoListPage> {
                         title: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () async {
-                            final controller = TextEditingController(text: item.title);
+                            final controller =
+                                TextEditingController(text: item.title);
                             final edited = await showDialog<String>(
                               context: context,
                               builder: (context) {
@@ -1214,7 +1381,8 @@ class _TodoListPageState extends State<TodoListPage> {
                                   ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
                                       child: const Text('キャンセル'),
                                     ),
                                     ElevatedButton(
@@ -1266,12 +1434,46 @@ class _TodoListPageState extends State<TodoListPage> {
                             ),
                           ],
                         ),
-                        subtitle: item.memo.isNotEmpty
-                            ? Text(
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.memo.isNotEmpty)
+                              Text(
                                 item.memo,
-                                style: const TextStyle(color: Colors.black54, fontSize: 13),
-                              )
-                            : null,
+                                style: const TextStyle(
+                                    color: Colors.black54, fontSize: 13),
+                              ),
+                            if (item.notificationTime != null)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 2.0, bottom: 2.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.notifications,
+                                        size: 16, color: Colors.deepPurple),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '通知: ${item.notificationTime!.hour.toString().padLeft(2, '0')}:${item.notificationTime!.minute.toString().padLeft(2, '0')}',
+                                      style: const TextStyle(
+                                          color: Colors.deepPurple,
+                                          fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (item.isPinned)
+                              const Row(
+                                children: [
+                                  Icon(Icons.push_pin,
+                                      color: Colors.amber, size: 16),
+                                  SizedBox(width: 4),
+                                  Text('固定中',
+                                      style: TextStyle(
+                                          color: Colors.amber, fontSize: 12)),
+                                ],
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

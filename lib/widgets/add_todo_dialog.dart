@@ -1,0 +1,327 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/todo_item.dart';
+import '../providers/todo_provider.dart';
+
+class AddTodoDialog extends ConsumerStatefulWidget {
+  final TodoType initialType;
+
+  const AddTodoDialog({
+    super.key,
+    required this.initialType,
+  });
+
+  @override
+  ConsumerState<AddTodoDialog> createState() => _AddTodoDialogState();
+}
+
+class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _memoController = TextEditingController();
+  final ScrollController _checklistScrollController = ScrollController();
+
+  List<TodoChecklistItem> _tempChecklist = [];
+  List<TextEditingController> _checklistControllers = [];
+  DateTime? _notificationTime;
+  DateTime? _dueDate;
+  TodoType? _selectedType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.initialType;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _memoController.dispose();
+    _checklistScrollController.dispose();
+    for (final controller in _checklistControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_checklistScrollController.hasClients) {
+        _checklistScrollController.animateTo(
+          _checklistScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  void _addChecklistItem() {
+    setState(() {
+      _tempChecklist.add(TodoChecklistItem(''));
+      _checklistControllers.add(TextEditingController());
+    });
+    _scrollToEnd();
+  }
+
+  void _removeChecklistItem(int index) {
+    setState(() {
+      _tempChecklist.removeAt(index);
+      _checklistControllers[index].dispose();
+      _checklistControllers.removeAt(index);
+    });
+  }
+
+  Future<void> _selectNotificationTime() async {
+    final now = DateTime.now();
+    DateTime tempTime = _notificationTime ??
+        DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          content: SizedBox(
+            height: 200,
+            width: 300,
+            child: CupertinoDatePicker(
+              mode: CupertinoDatePickerMode.time,
+              initialDateTime: tempTime,
+              use24hFormat: true,
+              onDateTimeChanged: (DateTime newTime) {
+                tempTime = newTime;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('キャンセル'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _notificationTime = tempTime;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('決定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _selectDueDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dueDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 10),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dueDate = picked;
+      });
+    }
+  }
+
+  void _addTodo() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+
+    // チェックリストの内容を更新
+    for (int i = 0; i < _tempChecklist.length; i++) {
+      _tempChecklist[i] = _tempChecklist[i].copyWith(
+        title: _checklistControllers[i].text,
+      );
+    }
+
+    final checklist =
+        _tempChecklist.where((item) => item.title.isNotEmpty).toList();
+
+    if (_selectedType == TodoType.continuous) {
+      ref.read(continuousTodoProvider.notifier).addTodo(
+            title,
+            memo: _memoController.text,
+            checklist: checklist,
+            notificationTime: _notificationTime,
+            dueDate: _dueDate,
+          );
+    } else {
+      ref.read(singleTodoProvider.notifier).addTodo(
+            title,
+            memo: _memoController.text,
+            checklist: checklist,
+            notificationTime: _notificationTime,
+            dueDate: _dueDate,
+          );
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('新しいタスクを追加'),
+      content: SingleChildScrollView(
+        controller: _checklistScrollController,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'タスク内容',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _memoController,
+              decoration: const InputDecoration(
+                labelText: '詳細メモ（任意）',
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // チェックリストセクション
+            Row(
+              children: [
+                const Text('チェックリスト',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _addChecklistItem,
+                ),
+              ],
+            ),
+            ...List.generate(_tempChecklist.length, (i) {
+              return Row(
+                children: [
+                  Checkbox(
+                    value: _tempChecklist[i].isChecked,
+                    onChanged: (checked) {
+                      setState(() {
+                        _tempChecklist[i] = _tempChecklist[i].copyWith(
+                          isChecked: checked ?? false,
+                        );
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _checklistControllers[i],
+                      decoration: const InputDecoration(
+                        hintText: 'チェックリスト項目',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _removeChecklistItem(i),
+                  ),
+                ],
+              );
+            }),
+
+            const SizedBox(height: 16),
+
+            // タイプ選択
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<TodoType>(
+                    title: const Text('継続'),
+                    value: TodoType.continuous,
+                    groupValue: _selectedType,
+                    onChanged: (val) => setState(() => _selectedType = val),
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<TodoType>(
+                    title: const Text('単発'),
+                    value: TodoType.single,
+                    groupValue: _selectedType,
+                    onChanged: (val) => setState(() => _selectedType = val),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // 通知時刻設定
+            Row(
+              children: [
+                const Icon(Icons.notifications, color: Colors.deepPurple),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _notificationTime == null
+                        ? '通知時刻を設定しない'
+                        : '通知: ${_notificationTime!.hour.toString().padLeft(2, '0')}:${_notificationTime!.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _selectNotificationTime,
+                  child: const Text('時刻を設定'),
+                ),
+                if (_notificationTime != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _notificationTime = null),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // 期限日設定
+            Row(
+              children: [
+                const Icon(Icons.event, color: Colors.deepPurple),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _dueDate == null
+                        ? '期限日を設定しない'
+                        : '期限: ${_dueDate!.year}/${_dueDate!.month.toString().padLeft(2, '0')}/${_dueDate!.day.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _selectDueDate,
+                  child: const Text('日付を設定'),
+                ),
+                if (_dueDate != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _dueDate = null),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('キャンセル'),
+        ),
+        ElevatedButton(
+          onPressed: _addTodo,
+          child: const Text('追加'),
+        ),
+      ],
+    );
+  }
+}
