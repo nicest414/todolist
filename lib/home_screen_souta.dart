@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'data_page.dart';
+
+// ここからクラスや関数を書く
+
 class TodoItem {
   String title;
   DateTime? doneAt;
@@ -966,28 +968,6 @@ class _TodoListPageState extends State<TodoListPage> {
             ),
           ),
           const SizedBox(height: 24),
-          // 5. 12時を過ぎた場合
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('12時を過ぎた場合'),
-                    content: const Text('12時を過ぎた場合のアクションをここに追加できます。'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('閉じる'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: const Text('12時を過ぎた場合'),
-            ),
-          ),
         ],
       ),
     ),
@@ -1003,4 +983,48 @@ class Todo {
 
 class TodoManager {
   // ...
+}
+
+class NotifyToggleButton extends StatefulWidget {
+  final bool initialEnabled;
+  final ValueChanged<bool>? onChanged;
+
+  const NotifyToggleButton({
+    Key? key,
+    this.initialEnabled = false,
+    this.onChanged,
+  }) : super(key: key);
+
+  @override
+  _NotifyToggleButtonState createState() => _NotifyToggleButtonState();
+}
+
+class _NotifyToggleButtonState extends State<NotifyToggleButton> {
+  late bool _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.initialEnabled;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text('通知'),
+        Switch(
+          value: _enabled,
+          onChanged: (value) {
+            setState(() {
+              _enabled = value;
+              widget.onChanged?.call(_enabled);
+            });
+          },
+        ),
+        Text(_enabled ? 'ON' : 'OFF'),
+      ],
+    );
+  }
 }
