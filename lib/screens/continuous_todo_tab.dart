@@ -19,7 +19,7 @@ class ContinuousTodoTab extends ConsumerWidget {
               ? Center(
                   child: Text(
                     view == TodoView.undone
-                        ? '継続TODOがありません\n右下のボタンから追加してください'
+                        ? '継続TODOがありません\n下のボタンから追加してください'
                         : '完了した継続TODOがありません',
                     textAlign: TextAlign.center,
                     style: TextStyle(

@@ -87,6 +87,37 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
             height: 1,
             color: Colors.deepPurple.withOpacity(0.3),
           ),
+          // 進捗ゲージ（画面幅いっぱい）
+          if (selectedTabIndex == 1 || selectedTabIndex == 3) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '進捗ゲージ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // 仮のゲージ
+                  Container(
+                    width: double.infinity,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ],
           Expanded(
             child: Stack(
               children: [
@@ -121,53 +152,59 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
                     right: 16,
                     top: 16,
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: view == TodoView.undone
-                                ? Colors.deepPurple
-                                : Colors.white,
-                            foregroundColor: view == TodoView.undone
-                                ? Colors.white
-                                : Colors.deepPurple,
-                            elevation: view == TodoView.undone ? 4 : 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(
-                                color: Colors.deepPurple,
-                                width: view == TodoView.undone ? 2 : 1,
+                        // 未/済ボタンRow（既存のRowをそのまま）
+                        Row(
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: view == TodoView.undone
+                                    ? Colors.deepPurple
+                                    : Colors.white,
+                                foregroundColor: view == TodoView.undone
+                                    ? Colors.white
+                                    : Colors.deepPurple,
+                                elevation: view == TodoView.undone ? 4 : 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: Colors.deepPurple,
+                                    width: view == TodoView.undone ? 2 : 1,
+                                  ),
+                                ),
                               ),
+                              onPressed: () {
+                                ref.read(todoViewProvider.notifier).state =
+                                    TodoView.undone;
+                              },
+                              child: const Text('未'),
                             ),
-                          ),
-                          onPressed: () {
-                            ref.read(todoViewProvider.notifier).state =
-                                TodoView.undone;
-                          },
-                          child: const Text('未'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: view == TodoView.done
-                                ? Colors.deepPurple
-                                : Colors.white,
-                            foregroundColor: view == TodoView.done
-                                ? Colors.white
-                                : Colors.deepPurple,
-                            elevation: view == TodoView.done ? 4 : 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(
-                                color: Colors.deepPurple,
-                                width: view == TodoView.done ? 2 : 1,
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: view == TodoView.done
+                                    ? Colors.deepPurple
+                                    : Colors.white,
+                                foregroundColor: view == TodoView.done
+                                    ? Colors.white
+                                    : Colors.deepPurple,
+                                elevation: view == TodoView.done ? 4 : 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: Colors.deepPurple,
+                                    width: view == TodoView.done ? 2 : 1,
+                                  ),
+                                ),
                               ),
+                              onPressed: () {
+                                ref.read(todoViewProvider.notifier).state =
+                                    TodoView.done;
+                              },
+                              child: const Text('済'),
                             ),
-                          ),
-                          onPressed: () {
-                            ref.read(todoViewProvider.notifier).state =
-                                TodoView.done;
-                          },
-                          child: const Text('済'),
+                          ],
                         ),
                       ],
                     ),
