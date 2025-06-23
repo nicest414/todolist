@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todolist_2/models/todo_item.dart';
 
 class MyPageTab extends StatefulWidget {
   const MyPageTab({super.key});
@@ -10,15 +11,22 @@ class MyPageTab extends StatefulWidget {
 class _MyPageTabState extends State<MyPageTab> {
   String _profileName = '';
   String _profileBio = '';
+  String? _loggedInEmail; // 追加：ログイン中のメールアドレス
 
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController(text: _profileName);
     final bioController = TextEditingController(text: _profileBio);
 
+    // 継続タスクと単発タスクのリストを取得（例：親から渡す場合やProviderから取得）
+    // ここでは例として空リストで初期化しています。実際はデータを渡してください。
+    final List<TodoItem> todosContinue = [];
+    final List<TodoItem> todosSingle = [];
     final int loginDays = 0;
-    final int totalTasks = 0; // 実際のタスク数は別途取得
-    final int completedTasks = 0; // 実際の完了タスク数は別途取得
+    final int totalTasks = todosContinue.length + todosSingle.length;
+    final int completedTasks =
+        todosContinue.where((t) => t.isCompleted).length +
+        todosSingle.where((t) => t.isCompleted).length;
     final List<String> todayTodos = []; // 今日のタスクは別途取得
 
     return Padding(
@@ -27,13 +35,25 @@ class _MyPageTabState extends State<MyPageTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ↓ここを追加
+            if (_loggedInEmail != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  '${_loggedInEmail!} でログインしています',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             // 1. ログインボタン
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // ボタンの背景色を緑に
-                  foregroundColor: Colors.white, // 文字色を白に
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
                   final emailController = TextEditingController();
@@ -48,15 +68,13 @@ class _MyPageTabState extends State<MyPageTab> {
                           children: [
                             TextField(
                               controller: emailController,
-                              decoration:
-                                  const InputDecoration(labelText: 'メールアドレス'),
+                              decoration: const InputDecoration(labelText: 'メールアドレス'),
                               keyboardType: TextInputType.emailAddress,
                             ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: passwordController,
-                              decoration:
-                                  const InputDecoration(labelText: 'パスワード'),
+                              decoration: const InputDecoration(labelText: 'パスワード'),
                               obscureText: true,
                             ),
                           ],
@@ -68,7 +86,9 @@ class _MyPageTabState extends State<MyPageTab> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              // ログイン処理をここに実装
+                              setState(() {
+                                _loggedInEmail = emailController.text.trim();
+                              });
                               Navigator.of(context).pop();
                             },
                             child: const Text('ログイン'),
@@ -231,7 +251,107 @@ class _MyPageTabState extends State<MyPageTab> {
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // アプリ情報・ヘルプ画面へ遷移など
+                                  Navigator.of(context).pop();
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text('アプリ情報・ヘルプ'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            ListTile(
+                                              leading: const Icon(Icons.menu_book),
+                                              title: const Text('使い方ガイド'),
+                                              onTap: () {
+                                                Navigator.of(context).pop();
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('使い方ガイド'),
+                                                    content: const Text('TODOリストの使い方ガイドをここに記載します。'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.of(context).pop(),
+                                                        child: const Text('閉じる'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            ListTile(
+                                              leading: const Icon(Icons.question_answer),
+                                              title: const Text('よくあるQ＆A'),
+                                              onTap: () {
+                                                Navigator.of(context).pop();
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('よくあるQ＆A'),
+                                                    content: const Text('よくある質問と回答をここに記載します。'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.of(context).pop(),
+                                                        child: const Text('閉じる'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            ListTile(
+                                              leading: const Icon(Icons.contact_mail),
+                                              title: const Text('お問い合わせフォーム'),
+                                              onTap: () {
+                                                Navigator.of(context).pop();
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('お問い合わせフォーム'),
+                                                    content: const Text('お問い合わせフォームをここに記載します。'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.of(context).pop(),
+                                                        child: const Text('閉じる'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            ListTile(
+                                              leading: const Icon(Icons.casino),
+                                              title: const Text('todoすごろく ver.1.0'),
+                                              onTap: () {
+                                                Navigator.of(context).pop();
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('todoすごろく ver.1.0'),
+                                                    content: const Text('todoすごろく ver.1.0の説明やリンクをここに記載します。'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.of(context).pop(),
+                                                        child: const Text('閉じる'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: const Text('閉じる'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
                                 },
                                 child: const Text('アプリ情報・ヘルプ'),
                               ),
@@ -252,28 +372,6 @@ class _MyPageTabState extends State<MyPageTab> {
               ),
             ),
             const SizedBox(height: 24),
-            // 5. 12時を過ぎた場合
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('12時を過ぎた場合'),
-                      content: const Text('12時を過ぎた場合のアクションをここに追加できます。'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('閉じる'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: const Text('12時を過ぎた場合'),
-              ),
-            ),
           ],
         ),
       ),
