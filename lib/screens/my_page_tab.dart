@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
+import '../providers/todo_provider.dart';
 
-class MyPageTab extends StatefulWidget {
+class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
 
   @override
-  State<MyPageTab> createState() => _MyPageTabState();
+  ConsumerState<MyPageTab> createState() => _MyPageTabState();
 }
 
-class _MyPageTabState extends State<MyPageTab> {
+class _MyPageTabState extends ConsumerState<MyPageTab> {
   String _profileName = '';
   String _profileBio = '';
   String? _loggedInEmail; // 追加：ログイン中のメールアドレス
@@ -18,16 +20,15 @@ class _MyPageTabState extends State<MyPageTab> {
     final nameController = TextEditingController(text: _profileName);
     final bioController = TextEditingController(text: _profileBio);
 
-    // 継続タスクと単発タスクのリストを取得（例：親から渡す場合やProviderから取得）
-    // ここでは例として空リストで初期化しています。実際はデータを渡してください。
-    final List<TodoItem> todosContinue = [];
-    final List<TodoItem> todosSingle = [];
-    final int loginDays = 0;
+    // 継続タスクと単発タスクのリストをProviderから取得
+    final List<TodoItem> todosContinue = ref.watch(continuousTodoProvider);
+    final List<TodoItem> todosSingle = ref.watch(singleTodoProvider);
+    final int loginDays = 1; // ログイン日数は別途実装
     final int totalTasks = todosContinue.length + todosSingle.length;
     final int completedTasks =
         todosContinue.where((t) => t.isCompleted).length +
         todosSingle.where((t) => t.isCompleted).length;
-    final List<String> todayTodos = []; // 今日のタスクは別途取得
+    final List<String> todayTodos = []; // 今日のタスクは別途実装
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
