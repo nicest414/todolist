@@ -18,17 +18,13 @@ class TodoItemWidget extends ConsumerWidget {
     return Dismissible(
       key: ValueKey(todo.id),
       background: Container(
-        color: isContinuous
-            ? (todo.isPinned ? Colors.grey : Colors.amber)
-            : Colors.transparent,
+        color: todo.isPinned ? Colors.grey : Colors.amber,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        child: isContinuous
-            ? Icon(
-                todo.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
-                color: Colors.white,
-              )
-            : null,
+        child: Icon(
+          todo.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+          color: Colors.white,
+        ),
       ),
       secondaryBackground: Container(
         color: Colors.red,
@@ -36,13 +32,15 @@ class TodoItemWidget extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      direction: isContinuous
-          ? DismissDirection.horizontal
-          : DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd && isContinuous) {
-          // 左から右：ピン留め切り替え（継続TODOのみ）
-          ref.read(continuousTodoProvider.notifier).togglePin(todo.id);
+        if (direction == DismissDirection.startToEnd) {
+          // 左から右：ピン留め切り替え（継続・単発両方対応）
+          if (isContinuous) {
+            ref.read(continuousTodoProvider.notifier).togglePin(todo.id);
+          } else {
+            ref.read(singleTodoProvider.notifier).togglePin(todo.id);
+          }
           return false; // Dismissibleを消さない
         } else if (direction == DismissDirection.endToStart) {
           // 右から左：削除確認
