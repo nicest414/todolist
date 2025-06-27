@@ -235,60 +235,46 @@ class TodoItemWidget extends ConsumerWidget {
                     ),
                 ],
               ),
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'pin':
-                      if (isContinuous) {
-                        ref
-                            .read(continuousTodoProvider.notifier)
-                            .togglePin(todo.id);
-                      } else {
-                        ref
-                            .read(singleTodoProvider.notifier)
-                            .togglePin(todo.id);
-                      }
-                      break;
-                    case 'delete':
-                      if (isContinuous) {
-                        ref
-                            .read(continuousTodoProvider.notifier)
-                            .removeTodo(todo.id);
-                      } else {
-                        ref
-                            .read(singleTodoProvider.notifier)
-                            .removeTodo(todo.id);
-                      }
-                      break;
+              trailing: IconButton(
+                icon: const Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                onPressed: () async {
+                  // 削除確認ダイアログ
+                  final bool? shouldDelete = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('削除確認'),
+                      content: Text('「${todo.title}」を削除しますか？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('キャンセル'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red),
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('削除',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  // 削除実行
+                  if (shouldDelete == true) {
+                    if (isContinuous) {
+                      ref
+                          .read(continuousTodoProvider.notifier)
+                          .removeTodo(todo.id);
+                    } else {
+                      ref.read(singleTodoProvider.notifier).removeTodo(todo.id);
+                    }
                   }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'pin',
-                    child: Row(
-                      children: [
-                        Icon(
-                          todo.isPinned
-                              ? Icons.push_pin_outlined
-                              : Icons.push_pin,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(todo.isPinned ? 'ピン解除' : 'ピン留め'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('削除', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
