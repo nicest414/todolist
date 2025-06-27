@@ -103,6 +103,56 @@ class TodoItemWidget extends ConsumerWidget {
                       ),
                     ],
                   ),
+                // チェックリストをタイトルの下の階層に移動
+                if (todo.checklist.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Column(
+                      children: todo.checklist.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final checklistItem = entry.value;
+                        return Row(
+                          children: [
+                            Checkbox(
+                              value: checklistItem.isChecked,
+                              onChanged: (checked) {
+                                if (isContinuous) {
+                                  ref
+                                      .read(continuousTodoProvider.notifier)
+                                      .updateChecklistItem(
+                                        todo.id,
+                                        index,
+                                        isChecked: checked ?? false,
+                                      );
+                                } else {
+                                  ref
+                                      .read(singleTodoProvider.notifier)
+                                      .updateChecklistItem(
+                                        todo.id,
+                                        index,
+                                        isChecked: checked ?? false,
+                                      );
+                                }
+                              },
+                              activeColor: Colors.deepPurple,
+                            ),
+                            Expanded(
+                              child: Text(
+                                checklistItem.title,
+                                style: TextStyle(
+                                  decoration: checklistItem.isChecked
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  color: checklistItem.isChecked ? Colors.grey : null,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
               ],
             ),
             trailing: PopupMenuButton<String>(
@@ -157,56 +207,6 @@ class TodoItemWidget extends ConsumerWidget {
               ],
             ),
           ),
-          // チェックリスト表示
-          if (todo.checklist.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: todo.checklist.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final checklistItem = entry.value;
-                  return Row(
-                    children: [
-                      Checkbox(
-                        value: checklistItem.isChecked,
-                        onChanged: (checked) {
-                          if (isContinuous) {
-                            ref
-                                .read(continuousTodoProvider.notifier)
-                                .updateChecklistItem(
-                                  todo.id,
-                                  index,
-                                  isChecked: checked ?? false,
-                                );
-                          } else {
-                            ref
-                                .read(singleTodoProvider.notifier)
-                                .updateChecklistItem(
-                                  todo.id,
-                                  index,
-                                  isChecked: checked ?? false,
-                                );
-                          }
-                        },
-                        activeColor: Colors.deepPurple,
-                      ),
-                      Expanded(
-                        child: Text(
-                          checklistItem.title,
-                          style: TextStyle(
-                            decoration: checklistItem.isChecked
-                                ? TextDecoration.lineThrough
-                                : null,
-                            color: checklistItem.isChecked ? Colors.grey : null,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
         ],
       ),
     );
