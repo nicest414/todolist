@@ -1,33 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../providers/todo_provider.dart';
 
-class MyPageTab extends StatefulWidget {
+class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
 
   @override
-  State<MyPageTab> createState() => _MyPageTabState();
+  ConsumerState<MyPageTab> createState() => _MyPageTabState();
 }
 
-class _MyPageTabState extends State<MyPageTab> {
+class _MyPageTabState extends ConsumerState<MyPageTab> {
   String _profileName = '';
   String _profileBio = '';
-  String? _loggedInEmail; // 追加：ログイン中のメールアドレス
+  String? _loggedInEmail;
+
+  // 通知ON/OFF状態
+  bool _notificationEnabled = true;
+  bool _todoNotificationSettingEnabled = false;
+  bool _todoNotificationEnabled = false;
+
+  // 通知プラグインのインスタンス
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> showLocalNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'todo_channel',
+      'TODO通知',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'TODOリマインダー',
+      'タスクの通知です',
+      platformChannelSpecifics,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController(text: _profileName);
     final bioController = TextEditingController(text: _profileBio);
 
-    // 継続タスクと単発タスクのリストを取得（例：親から渡す場合やProviderから取得）
-    // ここでは例として空リストで初期化しています。実際はデータを渡してください。
-    final List<TodoItem> todosContinue = [];
-    final List<TodoItem> todosSingle = [];
-    final int loginDays = 0;
+    // 継続タスクと単発タスクのリストをProviderから取得
+    final List<TodoItem> todosContinue = ref.watch(continuousTodoProvider);
+    final List<TodoItem> todosSingle = ref.watch(singleTodoProvider);
+    final int loginDays = 1; // ログイン日数は別途実装
     final int totalTasks = todosContinue.length + todosSingle.length;
     final int completedTasks =
         todosContinue.where((t) => t.isCompleted).length +
         todosSingle.where((t) => t.isCompleted).length;
-    final List<String> todayTodos = []; // 今日のタスクは別途取得
+    final List<String> todayTodos = []; // 今日のタスクは別途実装
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -58,42 +96,87 @@ class _MyPageTabState extends State<MyPageTab> {
                 onPressed: () async {
                   final emailController = TextEditingController();
                   final passwordController = TextEditingController();
+                  String? errorText;
+                  String? passwordErrorText;
                   await showDialog(
                     context: context,
                     builder: (context) {
-                      return AlertDialog(
-                        title: const Text('ログイン'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              controller: emailController,
-                              decoration: const InputDecoration(labelText: 'メールアドレス'),
-                              keyboardType: TextInputType.emailAddress,
+                      return StatefulBuilder(
+                        builder: (context, setState) {
+                          return AlertDialog(
+                            title: const Text('ログイン'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  controller: emailController,
+                                  decoration: InputDecoration(
+                                    labelText: 'メールアドレス',
+                                    errorText: errorText,
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: passwordController,
+                                  decoration: InputDecoration(
+                                    labelText: 'パスワード',
+                                    errorText: passwordErrorText,
+                                  ),
+                                  obscureText: true,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: passwordController,
-                              decoration: const InputDecoration(labelText: 'パスワード'),
-                              obscureText: true,
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('キャンセル'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _loggedInEmail = emailController.text.trim();
-                              });
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('ログイン'),
-                          ),
-                        ],
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('キャンセル'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final email = emailController.text.trim();
+                                  final password = passwordController.text;
+                                  final validEmail = email.endsWith('@gmail.com') ||
+                                      email.endsWith('@outlook.com') ||
+                                      email.endsWith('@icloud.com');
+                                  final validPassword = password.length >= 5 && password.length <= 12;
+
+                                  bool hasError = false;
+
+                                  if (!validEmail) {
+                                    setState(() {
+                                      errorText = 'メールアドレスは@gmail.com/@outlook.com/@icloud.comのいずれかで終わる必要があります';
+                                    });
+                                    hasError = true;
+                                  } else {
+                                    setState(() {
+                                      errorText = null;
+                                    });
+                                  }
+
+                                  if (!validPassword) {
+                                    setState(() {
+                                      passwordErrorText = 'パスワードは5〜12文字で入力してください';
+                                    });
+                                    hasError = true;
+                                  } else {
+                                    setState(() {
+                                      passwordErrorText = null;
+                                    });
+                                  }
+
+                                  if (hasError) return;
+
+                                  this.setState(() {
+                                    _loggedInEmail = email;
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('ログイン'),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   );
@@ -222,6 +305,70 @@ class _MyPageTabState extends State<MyPageTab> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // 通知・リマインダー設定画面へ遷移など
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return AlertDialog(
+                                            title: const Text('通知・リマインダー'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SwitchListTile(
+                                                  title: const Text('通知'),
+                                                  value: _notificationEnabled,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      _notificationEnabled = val;
+                                                    });
+                                                    this.setState(() {
+                                                      _notificationEnabled = val;
+                                                    });
+                                                  },
+                                                ),
+                                                SwitchListTile(
+                                                  title: const Text('todoごとの通知設定'),
+                                                  value: _todoNotificationSettingEnabled,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      _todoNotificationSettingEnabled = val;
+                                                    });
+                                                    this.setState(() {
+                                                      _todoNotificationSettingEnabled = val;
+                                                    });
+                                                  },
+                                                ),
+                                                SwitchListTile(
+                                                  title: const Text('todoごとの通知'),
+                                                  value: _todoNotificationEnabled,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      _todoNotificationEnabled = val;
+                                                    });
+                                                    this.setState(() {
+                                                      _todoNotificationEnabled = val;
+                                                    });
+                                                  },
+                                                ),
+                                                const SizedBox(height: 16),
+                                                ElevatedButton(
+                                                  onPressed: _notificationEnabled ? showLocalNotification : null,
+                                                  child: const Text('テスト通知を出す'),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(),
+                                                child: const Text('閉じる'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
                                 },
                                 child: const Text('通知・リマインダー'),
                               ),
