@@ -10,6 +10,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
     List<TodoChecklistItem>? checklist,
     DateTime? notificationTime,
     DateTime? dueDate,
+    int difficulty = 1,
     TodoType type = TodoType.continuous,
   }) {
     final newTodo = TodoItem(
@@ -19,6 +20,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
       checklist: checklist ?? [],
       notificationTime: notificationTime,
       dueDate: dueDate,
+      difficulty: difficulty,
     );
     state = [...state, newTodo];
   }

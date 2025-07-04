@@ -18,13 +18,17 @@ class TodoItemWidget extends ConsumerWidget {
     return Dismissible(
       key: ValueKey(todo.id),
       background: Container(
-        color: todo.isPinned ? Colors.grey : Colors.amber,
+        color: isContinuous
+            ? (todo.isPinned ? Colors.grey : Colors.amber)
+            : Colors.transparent,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        child: Icon(
-          todo.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
-          color: Colors.white,
-        ),
+        child: isContinuous
+            ? Icon(
+                todo.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+                color: Colors.white,
+              )
+            : null,
       ),
       secondaryBackground: Container(
         color: Colors.red,
@@ -32,15 +36,13 @@ class TodoItemWidget extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      direction: DismissDirection.horizontal,
+      direction: isContinuous
+          ? DismissDirection.horizontal
+          : DismissDirection.endToStart,
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          // 左から右：ピン留め切り替え（継続・単発両方対応）
-          if (isContinuous) {
-            ref.read(continuousTodoProvider.notifier).togglePin(todo.id);
-          } else {
-            ref.read(singleTodoProvider.notifier).togglePin(todo.id);
-          }
+          // 左から右：ピン留め切り替え（継続TODOのみ）
+          ref.read(continuousTodoProvider.notifier).togglePin(todo.id);
           return false; // Dismissibleを消さない
         } else if (direction == DismissDirection.endToStart) {
           // 右から左：削除確認
@@ -112,16 +114,46 @@ class TodoItemWidget extends ConsumerWidget {
                   ),
                 ],
               ),
-              title: Text(
-                todo.title,
-                style: TextStyle(
-                  decoration:
-                      todo.isCompleted ? TextDecoration.lineThrough : null,
-                  color: todo.isCompleted ? Colors.grey : null,
-                  fontWeight:
-                      todo.isPinned ? FontWeight.bold : FontWeight.normal,
-                ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    todo.title,
+                    style: TextStyle(
+                      decoration:
+                          todo.isCompleted ? TextDecoration.lineThrough : null,
+                      color: todo.isCompleted ? Colors.grey : null,
+                      fontWeight:
+                          todo.isPinned ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  if (todo.difficulty > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2, bottom: 2),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              ...List.generate(
+                                todo.difficulty,
+                                (i) => const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 18),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2, top: 2),
+                            child: Text(
+                              ['簡単','普通','難しい','困難'][(todo.difficulty - 1).clamp(0,3)],
+                              style: const TextStyle(fontSize: 12, color: Colors.deepOrange),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
+              // (重複していた難易度の炎アイコン表示を削除)
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -236,14 +268,10 @@ class TodoItemWidget extends ConsumerWidget {
                 ],
               ),
               trailing: IconButton(
-                icon: const Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: '削除',
                 onPressed: () async {
-                  // 削除確認ダイアログ
-                  final bool? shouldDelete = await showDialog<bool>(
+                  final confirm = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('削除確認'),
@@ -254,22 +282,17 @@ class TodoItemWidget extends ConsumerWidget {
                           child: const Text('キャンセル'),
                         ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
+                          style:
+                              ElevatedButton.styleFrom(backgroundColor: Colors.red),
                           onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text('削除',
-                              style: TextStyle(color: Colors.white)),
+                          child: const Text('削除', style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),
                   );
-
-                  // 削除実行
-                  if (shouldDelete == true) {
+                  if (confirm == true) {
                     if (isContinuous) {
-                      ref
-                          .read(continuousTodoProvider.notifier)
-                          .removeTodo(todo.id);
+                      ref.read(continuousTodoProvider.notifier).removeTodo(todo.id);
                     } else {
                       ref.read(singleTodoProvider.notifier).removeTodo(todo.id);
                     }

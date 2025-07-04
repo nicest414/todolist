@@ -26,6 +26,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   DateTime? _notificationTime;
   DateTime? _dueDate;
   TodoType? _selectedType;
+  int _difficulty = 1; // 1:簡単, 2:普通, 3:難しい, 4:困難
 
   @override
   void initState() {
@@ -152,6 +153,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
             checklist: checklist,
             notificationTime: _notificationTime,
             dueDate: _dueDate,
+            difficulty: _difficulty, // 難易度を追加
           );
     } else {
       ref.read(singleTodoProvider.notifier).addTodo(
@@ -160,6 +162,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
             checklist: checklist,
             notificationTime: _notificationTime,
             dueDate: _dueDate,
+            difficulty: _difficulty, // 難易度を追加
           );
     }
 
@@ -307,6 +310,49 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                     icon: const Icon(Icons.close, size: 18),
                     onPressed: () => setState(() => _dueDate = null),
                   ),
+              ],
+            ),
+            // 難易度設定
+            const SizedBox(height: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.local_fire_department, color: Colors.deepOrange),
+                    SizedBox(width: 8),
+                    Text('難易度', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: List<Widget>.generate(4, (i) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: IconButton(
+                          icon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List<Widget>.generate(i+1, (j) => const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 19)),
+                          ),
+                          onPressed: () => setState(() => _difficulty = i+1),
+                          color: _difficulty == i+1 ? Colors.deepOrange : Colors.grey,
+                          tooltip: ['簡単','普通','難しい','困難'][i],
+                        ),
+                      )),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    ['簡単','普通','難しい','困難'][_difficulty-1],
+                    style: const TextStyle(fontSize: 14, color: Colors.deepOrange),
+                  ),
+                ),
               ],
             ),
           ],
