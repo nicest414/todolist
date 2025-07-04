@@ -25,6 +25,7 @@ class TodoItem {
   DateTime? notificationTime;
   DateTime? dueDate;
   bool notificationEnabled;
+  int difficulty; // 1:簡単, 2:普通, 3:難しい, 4:困難
 
   TodoItem({
     required this.id,
@@ -36,6 +37,7 @@ class TodoItem {
     this.notificationTime,
     this.dueDate,
     this.notificationEnabled = false,
+    this.difficulty = 1,
   }) : checklist = checklist ?? [];
 
   TodoItem copyWith({
@@ -48,6 +50,7 @@ class TodoItem {
     DateTime? notificationTime,
     DateTime? dueDate,
     bool? notificationEnabled,
+    int? difficulty,
   }) {
     return TodoItem(
       id: id ?? this.id,
@@ -59,6 +62,7 @@ class TodoItem {
       notificationTime: notificationTime ?? this.notificationTime,
       dueDate: dueDate ?? this.dueDate,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      difficulty: difficulty ?? this.difficulty,
     );
   }
 
