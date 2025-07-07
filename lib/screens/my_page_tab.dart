@@ -389,6 +389,60 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // サウンド・バイブ設定画面へ遷移など
+                                  double volume = 0.5; // アプリ全体の音量（ダミー）
+                                  double notificationVolume = 0.5; // 通知音の音量（ダミー）
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return AlertDialog(
+                                            title: const Text('サウンド・バイブ設定'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Text('アプリの音量を調節'),
+                                                Slider(
+                                                  value: volume,
+                                                  min: 0.0,
+                                                  max: 1.0,
+                                                  divisions: 10,
+                                                  label: '${(volume * 100).round()}%',
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      volume = val;
+                                                    });
+                                                    // 実際の音量制御は別途パッケージが必要です
+                                                  },
+                                                ),
+                                                const SizedBox(height: 16),
+                                                const Text('通知音の大きさを調節'),
+                                                Slider(
+                                                  value: notificationVolume,
+                                                  min: 0.0,
+                                                  max: 1.0,
+                                                  divisions: 10,
+                                                  label: '${(notificationVolume * 100).round()}%',
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      notificationVolume = val;
+                                                    });
+                                                    // 実際の通知音量制御は別途パッケージが必要です
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(),
+                                                child: const Text('閉じる'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
                                 },
                                 child: const Text('サウンド・バイブ'),
                               ),
