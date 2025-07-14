@@ -24,6 +24,8 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
   // 通知プラグインのインスタンス
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
+  bool _isDarkMode = false; // 追加：テーマ状態を保持
+
   @override
   void initState() {
     super.initState();
@@ -379,6 +381,67 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // 外観・デザイン設定画面へ遷移など
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      bool tempIsDarkMode = _isDarkMode;
+                                      return StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return AlertDialog(
+                                            title: const Text('外観・デザイン設定'),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                RadioListTile<bool>(
+                                                  title: const Text('ライトモード'),
+                                                  value: false,
+                                                  groupValue: tempIsDarkMode,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      tempIsDarkMode = false;
+                                                    });
+                                                  },
+                                                ),
+                                                RadioListTile<bool>(
+                                                  title: const Text('ダークモード'),
+                                                  value: true,
+                                                  groupValue: tempIsDarkMode,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      tempIsDarkMode = true;
+                                                    });
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('キャンセル'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _isDarkMode = tempIsDarkMode;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                  // ここでテーマ切り替えをアプリ全体に反映するにはProviderやRiverpodでThemeModeを管理してください
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(_isDarkMode ? 'ダークモードに切り替えました' : 'ライトモードに切り替えました'),
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text('決定'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
                                 },
                                 child: const Text('外観・デザイン'),
                               ),
@@ -415,6 +478,16 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     // 実際の音量制御は別途パッケージが必要です
                                                   },
                                                 ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('アプリ音量 ${(volume * 100).round()}% でテスト再生！'),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: const Text('アプリ音量テスト'),
+                                                ),
                                                 const SizedBox(height: 16),
                                                 const Text('通知音の大きさを調節'),
                                                 Slider(
@@ -429,6 +502,16 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     });
                                                     // 実際の通知音量制御は別途パッケージが必要です
                                                   },
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('通知音量 ${(notificationVolume * 100).round()}% でテスト再生！'),
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: const Text('通知音量テスト'),
                                                 ),
                                               ],
                                             ),
