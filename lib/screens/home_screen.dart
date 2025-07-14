@@ -17,6 +17,15 @@ class TodoListPage extends ConsumerStatefulWidget {
 }
 
 class _TodoListPageState extends ConsumerState<TodoListPage> {
+  // フィルター種別
+  static const List<String> filterLabels = [
+    'ノーマル',
+    'タスク重い順',
+    'タスク軽い順',
+    'タイトル五十音順',
+    '期限が近い順',
+  ];
+  int _selectedFilter = 0;
   late PageController _pageController;
 
   @override
@@ -146,7 +155,27 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
                     ),
                   ],
                 ),
-                // 未/済ボタンをタイトル下・右寄せに配置（TODO継続・TODO単発タブのみ）
+                // 未/済ボタンとフィルターボタンをタイトル下・左右に配置（TODO継続・TODO単発タブのみ）
+                if (selectedTabIndex == 1 || selectedTabIndex == 3)
+                  Positioned(
+                    left: 16,
+                    top: 16,
+                    child: PopupMenuButton<int>(
+                      icon: const Icon(Icons.filter_alt, color: Colors.deepPurple, size: 28),
+                      initialValue: _selectedFilter,
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedFilter = value;
+                        });
+                        // ここでフィルター処理を呼び出す（必要ならプロバイダーに反映）
+                      },
+                      itemBuilder: (context) => List.generate(filterLabels.length, (i) => PopupMenuItem(
+                        value: i,
+                        child: Text(filterLabels[i]),
+                      )),
+                      tooltip: 'タスクの並び替え',
+                    ),
+                  ),
                 if (selectedTabIndex == 1 || selectedTabIndex == 3)
                   Positioned(
                     right: 16,
