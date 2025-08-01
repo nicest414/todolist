@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/todo_provider.dart';
+import 'package:todolist_2/providers/theme_provider.dart'; // ← これを必ず追加
 
 class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
@@ -380,11 +381,10 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // 外観・デザイン設定画面へ遷移など
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      bool tempIsDarkMode = _isDarkMode;
+                                      ThemeMode tempThemeMode = ref.read(themeModeProvider);
                                       return StatefulBuilder(
                                         builder: (context, setState) {
                                           return AlertDialog(
@@ -392,23 +392,33 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                             content: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                RadioListTile<bool>(
+                                                RadioListTile<ThemeMode>(
                                                   title: const Text('ライトモード'),
-                                                  value: false,
-                                                  groupValue: tempIsDarkMode,
+                                                  value: ThemeMode.light,
+                                                  groupValue: tempThemeMode,
                                                   onChanged: (val) {
                                                     setState(() {
-                                                      tempIsDarkMode = false;
+                                                      tempThemeMode = ThemeMode.light;
                                                     });
                                                   },
                                                 ),
-                                                RadioListTile<bool>(
+                                                RadioListTile<ThemeMode>(
                                                   title: const Text('ダークモード'),
-                                                  value: true,
-                                                  groupValue: tempIsDarkMode,
+                                                  value: ThemeMode.dark,
+                                                  groupValue: tempThemeMode,
                                                   onChanged: (val) {
                                                     setState(() {
-                                                      tempIsDarkMode = true;
+                                                      tempThemeMode = ThemeMode.dark;
+                                                    });
+                                                  },
+                                                ),
+                                                RadioListTile<ThemeMode>(
+                                                  title: const Text('システムに合わせる'),
+                                                  value: ThemeMode.system,
+                                                  groupValue: tempThemeMode,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      tempThemeMode = ThemeMode.system;
                                                     });
                                                   },
                                                 ),
@@ -416,23 +426,13 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                             ),
                                             actions: [
                                               TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
+                                                onPressed: () => Navigator.of(context).pop(),
                                                 child: const Text('キャンセル'),
                                               ),
                                               ElevatedButton(
                                                 onPressed: () {
-                                                  setState(() {
-                                                    _isDarkMode = tempIsDarkMode;
-                                                  });
+                                                  ref.read(themeModeProvider.notifier).state = tempThemeMode;
                                                   Navigator.of(context).pop();
-                                                  // ここでテーマ切り替えをアプリ全体に反映するにはProviderやRiverpodでThemeModeを管理してください
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(_isDarkMode ? 'ダークモードに切り替えました' : 'ライトモードに切り替えました'),
-                                                    ),
-                                                  );
                                                 },
                                                 child: const Text('決定'),
                                               ),
@@ -656,6 +656,27 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
               ),
             ),
             const SizedBox(height: 24),
+
+            // ↓ここを追加
+            if (_loggedInEmail != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _loggedInEmail = null;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('ログアウトしました')),
+                    );
+                  },
+                  child: const Text('ログアウト'),
+                ),
+              ),
           ],
         ),
       ),
