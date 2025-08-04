@@ -5,7 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/todo_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-import 'package:todolist_2/providers/theme_provider.dart';
+import 'package:todolist_2/providers/theme_provider.dart'; // ← これを必ず追加
 
 class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
@@ -693,6 +693,27 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
               ),
             ),
             const SizedBox(height: 24),
+
+            // ↓ここを追加
+            if (_loggedInEmail != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _loggedInEmail = null;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('ログアウトしました')),
+                    );
+                  },
+                  child: const Text('ログアウト'),
+                ),
+              ),
           ],
         ),
       ),
