@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/todo_provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+import 'package:todolist_2/providers/theme_provider.dart';
 
 class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
@@ -23,8 +26,11 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
 
   // 通知プラグインのインスタンス
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final AudioPlayer _audioPlayer = AudioPlayer(); // クラスのフィールドに追加
 
-  bool _isDarkMode = false; // 追加：テーマ状態を保持
+  // bool _isDarkMode = false; // ← もう不要なのでコメントアウトまたは削除
+  double _appVolume = 0.5; // ← 追加: アプリ音量を保持
+  double _notificationVolume = 0.5; // ← 追加: 通知音量を保持
 
   @override
   void initState() {
@@ -380,11 +386,10 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // 外観・デザイン設定画面へ遷移など
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      bool tempIsDarkMode = _isDarkMode;
+                                      ThemeMode tempThemeMode = ref.read(themeModeProvider);
                                       return StatefulBuilder(
                                         builder: (context, setState) {
                                           return AlertDialog(
@@ -392,23 +397,33 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                             content: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                RadioListTile<bool>(
+                                                RadioListTile<ThemeMode>(
                                                   title: const Text('ライトモード'),
-                                                  value: false,
-                                                  groupValue: tempIsDarkMode,
+                                                  value: ThemeMode.light,
+                                                  groupValue: tempThemeMode,
                                                   onChanged: (val) {
                                                     setState(() {
-                                                      tempIsDarkMode = false;
+                                                      tempThemeMode = ThemeMode.light;
                                                     });
                                                   },
                                                 ),
-                                                RadioListTile<bool>(
+                                                RadioListTile<ThemeMode>(
                                                   title: const Text('ダークモード'),
-                                                  value: true,
-                                                  groupValue: tempIsDarkMode,
+                                                  value: ThemeMode.dark,
+                                                  groupValue: tempThemeMode,
                                                   onChanged: (val) {
                                                     setState(() {
-                                                      tempIsDarkMode = true;
+                                                      tempThemeMode = ThemeMode.dark;
+                                                    });
+                                                  },
+                                                ),
+                                                RadioListTile<ThemeMode>(
+                                                  title: const Text('システムに合わせる'),
+                                                  value: ThemeMode.system,
+                                                  groupValue: tempThemeMode,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      tempThemeMode = ThemeMode.system;
                                                     });
                                                   },
                                                 ),
@@ -416,21 +431,22 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                             ),
                                             actions: [
                                               TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
+                                                onPressed: () => Navigator.of(context).pop(),
                                                 child: const Text('キャンセル'),
                                               ),
                                               ElevatedButton(
                                                 onPressed: () {
-                                                  setState(() {
-                                                    _isDarkMode = tempIsDarkMode;
-                                                  });
+                                                  ref.read(themeModeProvider.notifier).state = tempThemeMode;
                                                   Navigator.of(context).pop();
-                                                  // ここでテーマ切り替えをアプリ全体に反映するにはProviderやRiverpodでThemeModeを管理してください
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
-                                                      content: Text(_isDarkMode ? 'ダークモードに切り替えました' : 'ライトモードに切り替えました'),
+                                                      content: Text(
+                                                        tempThemeMode == ThemeMode.dark
+                                                            ? 'ダークモードに切り替えました'
+                                                            : tempThemeMode == ThemeMode.light
+                                                                ? 'ライトモードに切り替えました'
+                                                                : 'システム設定に合わせました',
+                                                      ),
                                                     ),
                                                   );
                                                 },
@@ -452,8 +468,9 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   // サウンド・バイブ設定画面へ遷移など
-                                  double volume = 0.5; // アプリ全体の音量（ダミー）
-                                  double notificationVolume = 0.5; // 通知音の音量（ダミー）
+                                  // ダイアログ表示時に現在の値で初期化
+                                  double volume = _appVolume;
+                                  double notificationVolume = _notificationVolume;
                                   showDialog(
                                     context: context,
                                     builder: (context) {
@@ -475,11 +492,14 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     setState(() {
                                                       volume = val;
                                                     });
-                                                    // 実際の音量制御は別途パッケージが必要です
                                                   },
                                                 ),
                                                 ElevatedButton(
-                                                  onPressed: () {
+                                                  onPressed: () async {
+                                                    await _audioPlayer.play(
+                                                      AssetSource('audio/test.mp3'),
+                                                      volume: volume,
+                                                    );
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
                                                         content: Text('アプリ音量 ${(volume * 100).round()}% でテスト再生！'),
@@ -500,11 +520,14 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     setState(() {
                                                       notificationVolume = val;
                                                     });
-                                                    // 実際の通知音量制御は別途パッケージが必要です
                                                   },
                                                 ),
                                                 ElevatedButton(
-                                                  onPressed: () {
+                                                  onPressed: () async {
+                                                    await _audioPlayer.play(
+                                                      AssetSource('audio/test.mp3'),
+                                                      volume: notificationVolume,
+                                                    );
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       SnackBar(
                                                         content: Text('通知音量 ${(notificationVolume * 100).round()}% でテスト再生！'),
@@ -519,6 +542,20 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                               TextButton(
                                                 onPressed: () => Navigator.of(context).pop(),
                                                 child: const Text('閉じる'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  // ダイアログで調整した値をクラスのフィールドに保存
+                                                  setState(() {
+                                                    _appVolume = volume;
+                                                    _notificationVolume = notificationVolume;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('音量設定を保存しました')),
+                                                  );
+                                                },
+                                                child: const Text('保存'),
                                               ),
                                             ],
                                           );
