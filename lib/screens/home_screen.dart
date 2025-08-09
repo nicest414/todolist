@@ -46,6 +46,7 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
     final selectedTabIndex = ref.watch(selectedTabIndexProvider);
     final view = ref.watch(todoViewProvider);
     final isSearching = ref.watch(isSearchingProvider);
+    final useCard = ref.watch(useCardLayoutProvider);
 
     final tabTitles = [
       '実績',
@@ -74,6 +75,15 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
         foregroundColor: Colors.deepPurple,
         actions: (selectedTabIndex == 1 || selectedTabIndex == 3)
             ? [
+                // レイアウト切替
+                IconButton(
+                  tooltip: useCard ? 'リスト表示に切替' : 'カード表示に切替',
+                  icon: Icon(useCard ? Icons.view_list : Icons.view_agenda),
+                  onPressed: () {
+                    final current = ref.read(useCardLayoutProvider);
+                    ref.read(useCardLayoutProvider.notifier).state = !current;
+                  },
+                ),
                 IconButton(
                   icon: const Text('🔍', style: TextStyle(fontSize: 22)),
                   onPressed: () {
