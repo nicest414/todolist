@@ -213,6 +213,28 @@ class TodoItemWidget extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  // タグの表示
+                  if (todo.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: -8,
+                        children: todo.tags
+                            .map((t) => Chip(
+                                  label: Text('#$t'),
+                                  backgroundColor: Colors.deepPurple.shade50,
+                                  labelStyle: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.deepPurple,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ))
+                            .toList(),
+                      ),
+                    ),
                   // チェックリストをタイトルの下の階層に移動 (todocontinueeeブランチの変更を適用)
                   if (todo.checklist.isNotEmpty)
                     Padding(

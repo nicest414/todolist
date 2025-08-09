@@ -22,6 +22,7 @@ class TodoItem {
   DateTime? doneAt;
   bool isPinned;
   List<TodoChecklistItem> checklist;
+  List<String> tags;
   DateTime? notificationTime;
   DateTime? dueDate;
   bool notificationEnabled;
@@ -34,11 +35,13 @@ class TodoItem {
     this.doneAt,
     this.isPinned = false,
     List<TodoChecklistItem>? checklist,
+    List<String>? tags,
     this.notificationTime,
     this.dueDate,
     this.notificationEnabled = false,
     this.difficulty = 1,
-  }) : checklist = checklist ?? [];
+  })  : checklist = checklist ?? [],
+        tags = tags ?? [];
 
   TodoItem copyWith({
     String? id,
@@ -47,6 +50,7 @@ class TodoItem {
     DateTime? doneAt,
     bool? isPinned,
     List<TodoChecklistItem>? checklist,
+    List<String>? tags,
     DateTime? notificationTime,
     DateTime? dueDate,
     bool? notificationEnabled,
@@ -59,6 +63,7 @@ class TodoItem {
       doneAt: doneAt ?? this.doneAt,
       isPinned: isPinned ?? this.isPinned,
       checklist: checklist ?? this.checklist,
+      tags: tags ?? this.tags,
       notificationTime: notificationTime ?? this.notificationTime,
       dueDate: dueDate ?? this.dueDate,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,

@@ -8,6 +8,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
     String title, {
     String memo = '',
     List<TodoChecklistItem>? checklist,
+    List<String>? tags,
     DateTime? notificationTime,
     DateTime? dueDate,
     int difficulty = 1,
@@ -18,6 +19,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
       title: title,
       memo: memo,
       checklist: checklist ?? [],
+      tags: tags ?? [],
       notificationTime: notificationTime,
       dueDate: dueDate,
       difficulty: difficulty,
@@ -54,6 +56,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
     String? title,
     String? memo,
     List<TodoChecklistItem>? checklist,
+    List<String>? tags,
     DateTime? notificationTime,
     DateTime? dueDate,
     bool? notificationEnabled,
@@ -64,6 +67,7 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
           title: title,
           memo: memo,
           checklist: checklist,
+          tags: tags,
           notificationTime: notificationTime,
           dueDate: dueDate,
           notificationEnabled: notificationEnabled,
@@ -75,8 +79,9 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
 
   void reorderTodos(int oldIndex, int newIndex) {
     final todos = [...state];
+    if (newIndex > oldIndex) newIndex -= 1;
     final item = todos.removeAt(oldIndex);
-    todos.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+    todos.insert(newIndex, item);
     state = todos;
   }
 
@@ -136,19 +141,37 @@ final filteredContinuousTodosProvider = Provider<List<TodoItem>>((ref) {
       : todos.where((todo) => todo.isCompleted).toList();
 
   if (searchQuery.isNotEmpty) {
-    filteredTodos = filteredTodos
-        .where((todo) =>
-            todo.title.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
+    // #タグ または #[タグ] を抽出
+    final bracketed = RegExp(r'#\[(.+?)\]').allMatches(searchQuery);
+    final plain = RegExp(r'#([^\s#]+)').allMatches(searchQuery);
+    final queryTags = {
+      ...bracketed.map((m) => m.group(1)!.trim().toLowerCase()),
+      ...plain.map((m) => m.group(1)!.trim().toLowerCase()),
+    }..removeWhere((s) => s.isEmpty);
+
+    if (queryTags.isNotEmpty) {
+      // タグ一致（OR条件）
+      filteredTodos = filteredTodos.where((todo) {
+        final todoTags = todo.tags.map((t) => t.toLowerCase()).toSet();
+        return todoTags.any((t) => queryTags.contains(t));
+      }).toList();
+    } else {
+      // 従来の部分一致（タイトル/メモ/タグ）
+      final q = searchQuery.toLowerCase();
+      filteredTodos = filteredTodos
+          .where((todo) =>
+              todo.title.toLowerCase().contains(q) ||
+              todo.memo.toLowerCase().contains(q) ||
+              todo.tags.any((t) => t.toLowerCase().contains(q)))
+          .toList();
+    }
   }
 
   // ソート処理
   filteredTodos.sort((a, b) {
-    // ピン留めされたアイテムを先頭に
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
 
-    // 完了日時でソート
     if (a.doneAt == null && b.doneAt == null) return 0;
     if (a.doneAt == null) return 1;
     if (b.doneAt == null) return -1;
@@ -169,19 +192,37 @@ final filteredSingleTodosProvider = Provider<List<TodoItem>>((ref) {
       : todos.where((todo) => todo.isCompleted).toList();
 
   if (searchQuery.isNotEmpty) {
-    filteredTodos = filteredTodos
-        .where((todo) =>
-            todo.title.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
+    // #タグ または #[タグ] を抽出
+    final bracketed = RegExp(r'#\[(.+?)\]').allMatches(searchQuery);
+    final plain = RegExp(r'#([^\s#]+)').allMatches(searchQuery);
+    final queryTags = {
+      ...bracketed.map((m) => m.group(1)!.trim().toLowerCase()),
+      ...plain.map((m) => m.group(1)!.trim().toLowerCase()),
+    }..removeWhere((s) => s.isEmpty);
+
+    if (queryTags.isNotEmpty) {
+      // タグ一致（OR条件）
+      filteredTodos = filteredTodos.where((todo) {
+        final todoTags = todo.tags.map((t) => t.toLowerCase()).toSet();
+        return todoTags.any((t) => queryTags.contains(t));
+      }).toList();
+    } else {
+      // 従来の部分一致（タイトル/メモ/タグ）
+      final q = searchQuery.toLowerCase();
+      filteredTodos = filteredTodos
+          .where((todo) =>
+              todo.title.toLowerCase().contains(q) ||
+              todo.memo.toLowerCase().contains(q) ||
+              todo.tags.any((t) => t.toLowerCase().contains(q)))
+          .toList();
+    }
   }
 
   // ソート処理
   filteredTodos.sort((a, b) {
-    // ピン留めされたアイテムを先頭に
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
 
-    // 完了日時でソート
     if (a.doneAt == null && b.doneAt == null) return 0;
     if (a.doneAt == null) return 1;
     if (b.doneAt == null) return -1;
