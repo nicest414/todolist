@@ -27,6 +27,8 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   DateTime? _dueDate;
   TodoType? _selectedType;
   int _difficulty = 1; // 1:簡単, 2:普通, 3:難しい, 4:困難
+  // 追加: タグ入力（カンマ区切り）
+  final TextEditingController _tagsController = TextEditingController();
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
     for (final controller in _checklistControllers) {
       controller.dispose();
     }
+    _tagsController.dispose();
     super.dispose();
   }
 
@@ -146,11 +149,20 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
     final checklist =
         _tempChecklist.where((item) => item.title.isNotEmpty).toList();
 
+    // タグのパース（カンマ区切り、空要素は除外、前後スペース除去、重複排除、小文字化はせず入力を尊重）
+    final tags = _tagsController.text
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+
     if (_selectedType == TodoType.continuous) {
       ref.read(continuousTodoProvider.notifier).addTodo(
             title,
             memo: _memoController.text,
             checklist: checklist,
+            tags: tags,
             notificationTime: _notificationTime,
             dueDate: _dueDate,
             difficulty: _difficulty, // 難易度を追加
@@ -160,6 +172,7 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
             title,
             memo: _memoController.text,
             checklist: checklist,
+            tags: tags,
             notificationTime: _notificationTime,
             dueDate: _dueDate,
             difficulty: _difficulty, // 難易度を追加
@@ -190,6 +203,16 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
               controller: _memoController,
               decoration: const InputDecoration(
                 labelText: '詳細メモ（任意）',
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 追加: タグ入力
+            TextField(
+              controller: _tagsController,
+              decoration: const InputDecoration(
+                labelText: 'タグ（カンマ区切り）',
+                hintText: '例: 仕事, 勉強, プライベート',
+                prefixIcon: Icon(Icons.tag),
               ),
             ),
             const SizedBox(height: 16),
