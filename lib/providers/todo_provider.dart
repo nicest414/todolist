@@ -130,6 +130,12 @@ final isSearchingProvider = StateProvider<bool>((ref) => false);
 // 選択されたタブインデックスプロバイダー
 final selectedTabIndexProvider = StateProvider<int>((ref) => 1);
 
+// 表示レイアウト（true=カード、false=リスト）
+final useCardLayoutProvider = StateProvider<bool>((ref) => true);
+
+// 各タスクの展開状態（タップで詳細表示を切替）
+final expandedItemProvider = StateProvider.family<bool, String>((ref, id) => false);
+
 // フィルタリングされた継続TODOプロバイダー
 final filteredContinuousTodosProvider = Provider<List<TodoItem>>((ref) {
   final todos = ref.watch(continuousTodoProvider);
