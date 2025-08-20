@@ -71,8 +71,6 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
               )
             : Text(tabTitles[selectedTabIndex]),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.deepPurple,
         actions: (selectedTabIndex == 1 || selectedTabIndex == 3)
             ? [
                 // レイアウト切替
@@ -297,13 +295,13 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
       BuildContext context, WidgetRef ref, int selectedTabIndex) {
     return Container(
       height: 70,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Theme.of(context).shadowColor.withOpacity(0.12),
             blurRadius: 4,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -370,18 +368,27 @@ class _TodoListPageState extends ConsumerState<TodoListPage> {
     required bool isSquare,
   }) {
     final isSelected = selectedTabIndex == index;
+    final theme = Theme.of(context);
 
     return IconButton(
       icon: Container(
         decoration: BoxDecoration(
           shape: isSquare ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: isSquare ? BorderRadius.circular(8) : null,
-          color: isSelected ? Colors.deepPurple : Colors.grey[300],
+          color: isSelected 
+              ? theme.primaryColor 
+              : theme.brightness == Brightness.dark 
+                  ? Colors.grey[700] 
+                  : Colors.grey[300],
         ),
         padding: EdgeInsets.all(isSquare ? 8 : 10),
         child: Icon(
           icon,
-          color: isSelected ? Colors.white : Colors.deepPurple,
+          color: isSelected 
+              ? Colors.white 
+              : theme.brightness == Brightness.dark 
+                  ? Colors.grey[300] 
+                  : theme.primaryColor,
         ),
       ),
       onPressed: () {
