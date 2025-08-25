@@ -62,6 +62,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
 
   @override
   Widget build(BuildContext context) {
+
     final nameController = TextEditingController(text: _profileName);
     final bioController = TextEditingController(text: _profileBio);
 
@@ -194,6 +195,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
             ),
             const SizedBox(height: 24),
             // 2. プロフィール編集
+            if (_loggedInEmail != null)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -359,11 +361,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     });
                                                   },
                                                 ),
-                                                const SizedBox(height: 16),
-                                                ElevatedButton(
-                                                  onPressed: _notificationEnabled ? showLocalNotification : null,
-                                                  child: const Text('テスト通知を出す'),
-                                                ),
+                                                const SizedBox(height: 16),                                                
                                               ],
                                             ),
                                             actions: [
