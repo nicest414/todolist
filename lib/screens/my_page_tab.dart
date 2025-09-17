@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/todo_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todolist_2/providers/theme_provider.dart'; // ← これを必ず追加
+
+Map<String, String> _registeredUsers = {};
 
 class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
@@ -40,8 +43,31 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      loadLoggedInEmail();
+      loadUsers();
   }
 
+    Future<void> loadUsers() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('users');
+      if (jsonString != null) {
+        setState(() {
+          _registeredUsers = Map<String, String>.from(jsonDecode(jsonString));
+        });
+      }
+    }
+
+    Future<void> saveUsers() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(_registeredUsers);
+      await prefs.setString('users', jsonString);
+    }
+    Future<void> loadLoggedInEmail() async {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _loggedInEmail = prefs.getString('saved_email');
+      });
+    }
   Future<void> showLocalNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -94,105 +120,149 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                   ),
                 ),
               ),
-            // 1. ログインボタン
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+            // 1. ログインボタン            
+ SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+    ),
+    onPressed: () async {
+      final emailController = TextEditingController();
+      final passwordController = TextEditingController();
+      String? errorText;
+      String? passwordErrorText;
+      bool isLogin = true; // ←追加: ログイン/新規登録の切替
+
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text(isLogin ? 'ログイン' : '新規登録'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        labelText: 'メールアドレス',
+                        errorText: errorText,
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'パスワード',
+                        errorText: passwordErrorText,
+                      ),
+                      obscureText: true,
+                    ),
+                  ],
                 ),
-                onPressed: () async {
-                  final emailController = TextEditingController();
-                  final passwordController = TextEditingController();
-                  String? errorText;
-                  String? passwordErrorText;
-                  await showDialog(
-                    context: context,
-                    builder: (context) {
-                      return StatefulBuilder(
-                        builder: (context, setState) {
-                          return AlertDialog(
-                            title: const Text('ログイン'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  controller: emailController,
-                                  decoration: InputDecoration(
-                                    labelText: 'メールアドレス',
-                                    errorText: errorText,
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: passwordController,
-                                  decoration: InputDecoration(
-                                    labelText: 'パスワード',
-                                    errorText: passwordErrorText,
-                                  ),
-                                  obscureText: true,
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('キャンセル'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final email = emailController.text.trim();
-                                  final password = passwordController.text;
-                                  final validEmail = email.endsWith('@gmail.com') ||
-                                      email.endsWith('@outlook.com') ||
-                                      email.endsWith('@icloud.com');
-                                  final validPassword = password.length >= 5 && password.length <= 12;
-
-                                  bool hasError = false;
-
-                                  if (!validEmail) {
-                                    setState(() {
-                                      errorText = 'メールアドレスは@gmail.com/@outlook.com/@icloud.comのいずれかで終わる必要があります';
-                                    });
-                                    hasError = true;
-                                  } else {
-                                    setState(() {
-                                      errorText = null;
-                                    });
-                                  }
-
-                                  if (!validPassword) {
-                                    setState(() {
-                                      passwordErrorText = 'パスワードは5〜12文字で入力してください';
-                                    });
-                                    hasError = true;
-                                  } else {
-                                    setState(() {
-                                      passwordErrorText = null;
-                                    });
-                                  }
-
-                                  if (hasError) return;
-
-                                  this.setState(() {
-                                    _loggedInEmail = email;
-                                  });
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text('ログイン'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        isLogin = !isLogin; // ←「ログイン/新規登録」切り替え
+                        errorText = null;
+                        passwordErrorText = null;
+                        emailController.clear();
+                        passwordController.clear();
+                      });
                     },
-                  );
-                },
-                child: const Text('ログイン'),
-              ),
-            ),
+                    child: Text(isLogin ? '新規登録はこちら' : 'ログインはこちら'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('キャンセル'),
+                  ),
+                  ElevatedButton(
+                      onPressed: () async {
+                        final email = emailController.text.trim();
+                        final password = passwordController.text;
+                        final validEmail = email.endsWith('@gmail.com') ||
+                            email.endsWith('@outlook.com') ||
+                            email.endsWith('@icloud.com');
+                        final validPassword = password.length >= 5 && password.length <= 12;
+
+                        bool hasError = false;
+
+                        if (!validEmail) {
+                          setState(() {
+                            errorText = 'メールアドレスは@gmail.com/@outlook.com/@icloud.comのいずれかで終わる必要があります';
+                          });
+                          hasError = true;
+                        } else {
+                          setState(() {
+                            errorText = null;
+                          });
+                        }
+
+                        if (!validPassword) {
+                          setState(() {
+                            passwordErrorText = 'パスワードは5〜12文字で入力してください';
+                          });
+                          hasError = true;
+                        } else {
+                          setState(() {
+                            passwordErrorText = null;
+                          });
+                        }
+
+                        if (hasError) return;
+
+                        final prefs = await SharedPreferences.getInstance();
+                        if (isLogin) {
+                            // ログイン処理（登録済みユーザーのみ許可）
+                            if (_registeredUsers.containsKey(email) && _registeredUsers[email] == password) {
+                              this.setState(() {
+                                _loggedInEmail = email;
+                              });
+                              await prefs.setString('saved_email', email);
+                              await prefs.setString('saved_password', password);
+                              Navigator.of(context).pop();
+                            } else {
+                              setState(() {
+                                errorText = '登録情報がありません、またはパスワードが間違っています';
+                              });
+                            }
+                        } else {
+                            // 新規登録処理
+                            if (_registeredUsers.containsKey(email)) {
+                              setState(() {
+                                errorText = 'このメールアドレスは既に登録されています';
+                              });
+                              return;
+                            }
+                            _registeredUsers[email] = password;
+                            await saveUsers();
+                            await prefs.setString('saved_email', email);
+                            await prefs.setString('saved_password', password);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('登録が完了しました。ログインしてください')),
+                            );
+                            setState(() {
+                              isLogin = true; // 登録後はログイン画面に戻す
+                            });
+                        }
+                      },
+                    child: Text(isLogin ? 'ログイン' : '登録'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    },
+    child: const Text('ログイン'),
+  ),
+),
             const SizedBox(height: 24),
             // 2. プロフィール編集
             if (_loggedInEmail != null)
