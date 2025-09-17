@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todolist_2/models/todo_item.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../providers/todo_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todolist_2/providers/theme_provider.dart'; // ← これを必ず追加
+
+Map<String, String> _registeredUsers = {};
 
 class MyPageTab extends ConsumerStatefulWidget {
   const MyPageTab({super.key});
@@ -40,8 +43,31 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      loadLoggedInEmail();
+      loadUsers();
   }
 
+    Future<void> loadUsers() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString('users');
+      if (jsonString != null) {
+        setState(() {
+          _registeredUsers = Map<String, String>.from(jsonDecode(jsonString));
+        });
+      }
+    }
+
+    Future<void> saveUsers() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(_registeredUsers);
+      await prefs.setString('users', jsonString);
+    }
+    Future<void> loadLoggedInEmail() async {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _loggedInEmail = prefs.getString('saved_email');
+      });
+    }
   Future<void> showLocalNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -156,57 +182,75 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                     child: const Text('キャンセル'),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      final email = emailController.text.trim();
-                      final password = passwordController.text;
-                      final validEmail = email.endsWith('@gmail.com') ||
-                          email.endsWith('@outlook.com') ||
-                          email.endsWith('@icloud.com');
-                      final validPassword = password.length >= 5 && password.length <= 12;
+                      onPressed: () async {
+                        final email = emailController.text.trim();
+                        final password = passwordController.text;
+                        final validEmail = email.endsWith('@gmail.com') ||
+                            email.endsWith('@outlook.com') ||
+                            email.endsWith('@icloud.com');
+                        final validPassword = password.length >= 5 && password.length <= 12;
 
-                      bool hasError = false;
+                        bool hasError = false;
 
-                      if (!validEmail) {
-                        setState(() {
-                          errorText = 'メールアドレスは@gmail.com/@outlook.com/@icloud.comのいずれかで終わる必要があります';
-                        });
-                        hasError = true;
-                      } else {
-                        setState(() {
-                          errorText = null;
-                        });
-                      }
+                        if (!validEmail) {
+                          setState(() {
+                            errorText = 'メールアドレスは@gmail.com/@outlook.com/@icloud.comのいずれかで終わる必要があります';
+                          });
+                          hasError = true;
+                        } else {
+                          setState(() {
+                            errorText = null;
+                          });
+                        }
 
-                      if (!validPassword) {
-                        setState(() {
-                          passwordErrorText = 'パスワードは5〜12文字で入力してください';
-                        });
-                        hasError = true;
-                      } else {
-                        setState(() {
-                          passwordErrorText = null;
-                        });
-                      }
+                        if (!validPassword) {
+                          setState(() {
+                            passwordErrorText = 'パスワードは5〜12文字で入力してください';
+                          });
+                          hasError = true;
+                        } else {
+                          setState(() {
+                            passwordErrorText = null;
+                          });
+                        }
 
-                      if (hasError) return;
+                        if (hasError) return;
 
-                      if (isLogin) {
-                        // ログイン処理
-                        this.setState(() {
-                          _loggedInEmail = email;
-                        });
-                        Navigator.of(context).pop();
-                      } else {
-                        // 新規登録処理
-                        // ここにユーザー登録のロジックを追加
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('登録が完了しました。ログインしてください')),
-                        );
-                        setState(() {
-                          isLogin = true; // 登録後はログイン画面に戻す
-                        });
-                      }
-                    },
+                        final prefs = await SharedPreferences.getInstance();
+                        if (isLogin) {
+                            // ログイン処理（登録済みユーザーのみ許可）
+                            if (_registeredUsers.containsKey(email) && _registeredUsers[email] == password) {
+                              this.setState(() {
+                                _loggedInEmail = email;
+                              });
+                              await prefs.setString('saved_email', email);
+                              await prefs.setString('saved_password', password);
+                              Navigator.of(context).pop();
+                            } else {
+                              setState(() {
+                                errorText = '登録情報がありません、またはパスワードが間違っています';
+                              });
+                            }
+                        } else {
+                            // 新規登録処理
+                            if (_registeredUsers.containsKey(email)) {
+                              setState(() {
+                                errorText = 'このメールアドレスは既に登録されています';
+                              });
+                              return;
+                            }
+                            _registeredUsers[email] = password;
+                            await saveUsers();
+                            await prefs.setString('saved_email', email);
+                            await prefs.setString('saved_password', password);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('登録が完了しました。ログインしてください')),
+                            );
+                            setState(() {
+                              isLogin = true; // 登録後はログイン画面に戻す
+                            });
+                        }
+                      },
                     child: Text(isLogin ? 'ログイン' : '登録'),
                   ),
                 ],
