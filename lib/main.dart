@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
 import 'providers/theme_provider.dart';
+import 'screens/login_page.dart';
 
 void main() {
   runApp(
