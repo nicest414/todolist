@@ -45,7 +45,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
       loadLoggedInEmail();
       loadUsers();
-      // 通知設定をロード
+ // 通知設定をロード
       _loadNotificationSettings();
   }
 
@@ -91,6 +91,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     });
     _saveNotificationSettings();
   }
+
 
     Future<void> loadUsers() async {
       final prefs = await SharedPreferences.getInstance();
