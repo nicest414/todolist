@@ -45,7 +45,53 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
       loadLoggedInEmail();
       loadUsers();
+ // 通知設定をロード
+      _loadNotificationSettings();
   }
+
+  Future<void> _loadNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notificationEnabled = prefs.getBool('notification_enabled') ?? true;
+      _todoNotificationSettingEnabled = prefs.getBool('todo_notification_setting_enabled') ?? false;
+      _todoNotificationEnabled = prefs.getBool('todo_notification_enabled') ?? false;
+      // 既存のボリューム設定も prefs から読み込める（オプション）
+      _appVolume = prefs.getDouble('app_volume') ?? _appVolume;
+      _notificationVolume = prefs.getDouble('notification_volume') ?? _notificationVolume;
+    });
+  }
+
+  Future<void> _saveNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notification_enabled', _notificationEnabled);
+    await prefs.setBool('todo_notification_setting_enabled', _todoNotificationSettingEnabled);
+    await prefs.setBool('todo_notification_enabled', _todoNotificationEnabled);
+    await prefs.setDouble('app_volume', _appVolume);
+    await prefs.setDouble('notification_volume', _notificationVolume);
+  }
+
+  // セッターを用意して親 state を確実に更新しつつ永続化する
+  void _setNotificationEnabled(bool val) {
+    setState(() {
+      _notificationEnabled = val;
+    });
+    _saveNotificationSettings();
+  }
+
+  void _setTodoNotificationSettingEnabled(bool val) {
+    setState(() {
+      _todoNotificationSettingEnabled = val;
+    });
+    _saveNotificationSettings();
+  }
+
+  void _setTodoNotificationEnabled(bool val) {
+    setState(() {
+      _todoNotificationEnabled = val;
+    });
+    _saveNotificationSettings();
+  }
+
 
     Future<void> loadUsers() async {
       final prefs = await SharedPreferences.getInstance();
@@ -399,12 +445,11 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                   title: const Text('通知'),
                                                   value: _notificationEnabled,
                                                   onChanged: (val) {
+                                                    // ダイアログ内部からも親のセッターを呼ぶ
                                                     setState(() {
                                                       _notificationEnabled = val;
                                                     });
-                                                    this.setState(() {
-                                                      _notificationEnabled = val;
-                                                    });
+                                                    _setNotificationEnabled(val);
                                                   },
                                                 ),
                                                 SwitchListTile(
@@ -414,9 +459,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     setState(() {
                                                       _todoNotificationSettingEnabled = val;
                                                     });
-                                                    this.setState(() {
-                                                      _todoNotificationSettingEnabled = val;
-                                                    });
+                                                    _setTodoNotificationSettingEnabled(val);
                                                   },
                                                 ),
                                                 SwitchListTile(
@@ -426,9 +469,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     setState(() {
                                                       _todoNotificationEnabled = val;
                                                     });
-                                                    this.setState(() {
-                                                      _todoNotificationEnabled = val;
-                                                    });
+                                                    _setTodoNotificationEnabled(val);
                                                   },
                                                 ),
                                                 const SizedBox(height: 16),                                                

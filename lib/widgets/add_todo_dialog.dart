@@ -178,6 +178,32 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
             difficulty: _difficulty, // 難易度を追加
           );
     }
+    // 追加後に通知が設定されている場合は上部に MaterialBanner を表示する
+    final hasNotification = _notificationTime != null;
+    if (hasNotification) {
+      // 一旦ダイアログを閉じてからバナーを表示すると UI が安定する
+      Navigator.of(context).pop();
+
+      // 少し遅延してバナーを表示（ダイアログのポップ処理が終わるのを待つ）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showMaterialBanner(MaterialBanner(
+          content: Text('通知を有効にしたタスク「$title」を追加しました（${_notificationTime!.hour.toString().padLeft(2, '0')}:${_notificationTime!.minute.toString().padLeft(2, '0')}）'),
+          actions: [
+            TextButton(
+              onPressed: () => messenger.hideCurrentMaterialBanner(),
+              child: const Text('閉じる'),
+            ),
+          ],
+        ));
+
+        // 自動で4秒後に消す
+        Future.delayed(const Duration(seconds: 4), () {
+          messenger.hideCurrentMaterialBanner();
+        });
+      });
+      return;
+    }
 
     Navigator.of(context).pop();
   }
