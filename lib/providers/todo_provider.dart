@@ -22,6 +22,8 @@ class TodoNotifier extends StateNotifier<List<TodoItem>> {
       tags: tags ?? [],
       notificationTime: notificationTime,
       dueDate: dueDate,
+      // 自動で通知有効フラグを設定（通知時刻があれば有効）
+      notificationEnabled: notificationTime != null,
       difficulty: difficulty,
     );
     state = [...state, newTodo];
