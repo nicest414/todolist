@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/todo_item.dart';
 import '../providers/todo_provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddTodoDialog extends ConsumerStatefulWidget {
   final TodoType initialType;
@@ -205,7 +207,52 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
       return;
     }
 
-    Navigator.of(context).pop();
+    // 通知が設定されている場合はダイアログを閉じてからバナーを表示し、通知音を再生する
+    final hasNotification = _notificationTime != null;
+    if (hasNotification) {
+      // 通知がグローバルに許可されているか確認
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final bool globalAllowed = prefs.getBool('notification_enabled') ?? true;
+
+        Navigator.of(context).pop();
+
+        if (!globalAllowed) return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.showMaterialBanner(MaterialBanner(
+            content: Text('通知を有効にしたタスク「$title」を追加しました（${_notificationTime!.hour.toString().padLeft(2, '0')}:${_notificationTime!.minute.toString().padLeft(2, '0')}）'),
+            actions: [
+              TextButton(
+                onPressed: () => messenger.hideCurrentMaterialBanner(),
+                child: const Text('閉じる'),
+              ),
+            ],
+          ));
+
+          // 非同期で通知音を再生（SharedPreferences の 'notification_volume' を参照）
+          () async {
+            try {
+              final double notifVol = prefs.getDouble('notification_volume') ?? 0.5;
+              final audioPlayer = AudioPlayer();
+              await audioPlayer.play(AssetSource('audio/test.mp3'), volume: notifVol);
+            } catch (e) {
+              // ログのみ
+              // ignore: avoid_print
+              print('通知音の再生に失敗しました: $e');
+            }
+          }();
+
+          // 4秒後に自動でバナーを非表示
+          Future.delayed(const Duration(seconds: 4), () {
+            messenger.hideCurrentMaterialBanner();
+          });
+        });
+      }();
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override

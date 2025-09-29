@@ -24,8 +24,7 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
 
   // 通知ON/OFF状態
   bool _notificationEnabled = true;
-  bool _todoNotificationSettingEnabled = false;
-  bool _todoNotificationEnabled = false;
+  // per-todo notification flags removed
 
   // 通知プラグインのインスタンス
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -45,8 +44,27 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
       loadLoggedInEmail();
       loadUsers();
- // 通知設定をロード
-      _loadNotificationSettings();
+
+      _loadNotificationEnabled();
+  }
+
+  Future<void> _loadNotificationEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    final val = prefs.getBool('notification_enabled');
+    if (val != null) {
+      setState(() {
+        _notificationEnabled = val;
+      });
+    }
+  }
+
+  Future<void> _saveNotificationEnabled(bool val) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notification_enabled', val);
+
+ 
+ 
+
   }
 
   Future<void> _loadNotificationSettings() async {
@@ -115,6 +133,16 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
       });
     }
   Future<void> showLocalNotification() async {
+    // グローバル通知設定が許可されているか確認
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final bool globalAllowed = prefs.getBool('notification_enabled') ?? _notificationEnabled;
+      if (!globalAllowed) return;
+    } catch (e) {
+      // SharedPreferences の取得に失敗したら、既定のフィールド値を使う
+      if (!_notificationEnabled) return;
+    }
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'todo_channel',
@@ -449,27 +477,8 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                     setState(() {
                                                       _notificationEnabled = val;
                                                     });
-                                                    _setNotificationEnabled(val);
-                                                  },
-                                                ),
-                                                SwitchListTile(
-                                                  title: const Text('todoごとの通知設定'),
-                                                  value: _todoNotificationSettingEnabled,
-                                                  onChanged: (val) {
-                                                    setState(() {
-                                                      _todoNotificationSettingEnabled = val;
-                                                    });
-                                                    _setTodoNotificationSettingEnabled(val);
-                                                  },
-                                                ),
-                                                SwitchListTile(
-                                                  title: const Text('todoごとの通知'),
-                                                  value: _todoNotificationEnabled,
-                                                  onChanged: (val) {
-                                                    setState(() {
-                                                      _todoNotificationEnabled = val;
-                                                    });
-                                                    _setTodoNotificationEnabled(val);
+
+
                                                   },
                                                 ),
                                                 const SizedBox(height: 16),                                                
@@ -633,6 +642,15 @@ class _MyPageTabState extends ConsumerState<MyPageTab> {
                                                 ),
                                                 ElevatedButton(
                                                   onPressed: () async {
+                                                    // 通知がグローバルで許可されているか確認
+                                                    final prefs = await SharedPreferences.getInstance();
+                                                    final bool globalAllowed = prefs.getBool('notification_enabled') ?? _notificationEnabled;
+                                                    if (!globalAllowed) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        const SnackBar(content: Text('通知はオフになっています')),
+                                                      );
+                                                      return;
+                                                    }
                                                     await _audioPlayer.play(
                                                       AssetSource('audio/test.mp3'),
                                                       volume: notificationVolume,
