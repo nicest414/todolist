@@ -414,6 +414,7 @@ class _SugorokuTabState extends ConsumerState<SugorokuTab>
               _buildInfoColumn('現在位置', '${state.playerPosition + 1}マス目'),
               if (state.showDiceResult)
                 _buildInfoColumn('サイコロの目', '${state.diceResult}', Colors.red),
+              _buildInfoColumn('残り振れる回数', '${state.remainingRolls}回'),
             ],
           ),
         ),
@@ -444,7 +445,7 @@ class _SugorokuTabState extends ConsumerState<SugorokuTab>
     return Container(
       padding: const EdgeInsets.all(16),
       child: ElevatedButton(
-        onPressed: (state.isDiceRolling || state.isGoalReached) ? null : _rollDice,
+        onPressed: (state.isDiceRolling || state.isGoalReached || state.remainingRolls <= 0) ? null : _rollDice,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue[500],
           foregroundColor: Colors.white,
